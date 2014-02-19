@@ -9,7 +9,7 @@ EDL_FLAGS=
 CLEAN=clean
 DEV=dev
 
-LIBS=-lncurse -ltcl -ltp
+LIBS=-lncurses -ltcl -ltp
 LIB_PATH=-L /shares/public/tp/tp-multitache/
 
 INC=
@@ -36,7 +36,7 @@ $(DEV): $(EXE)
 
 %.o: %.cpp %.h
 	$(ECHO) Compiling $<...
-	$(COMP) $< $(COMP_FLAGS) $(INC_PATH)
+	$(COMP) -c $< $(COMP_FLAGS) $(INC_PATH)
 
 $(CLEAN):
 	$(RM) $(RM_FLAGS) $(OBJ) $(EXE) core
