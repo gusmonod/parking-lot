@@ -30,12 +30,13 @@ $(EXE): $(OBJ)
 	$(EDL) $(EDL_FLAGS) $(LIB_PATH) -o $(EXE) $(OBJ) $(LIBS)
 	$(RM) $(RM_FLAGS) $(OBJ)
 
-$(DEV):
-	INC_PATH=/Users/gustavemonod/Desktop/
+$(DEV): INC_PATH=-I /Users/gustavemonod/Desktop/
+$(DEV): LIB_PATH=-L /Users/gustavemonod/Desktop/
+$(DEV): $(EXE)
 
 %.o: %.cpp %.h
 	$(ECHO) Compiling $<...
-	$(COMP) $(COMP_FLAGS) $(INC_PATH)
+	$(COMP) $< $(COMP_FLAGS) $(INC_PATH)
 
 $(CLEAN):
 	$(RM) $(RM_FLAGS) $(OBJ) $(EXE) core
