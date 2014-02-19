@@ -14,6 +14,10 @@
 #include <stdio.h>
 
 //------------------------------------------------------- Personal include
+#include "/public/tp/tp-multitache/Heure.h"
+#include "/public/tp/tp-multitache/Outils.h"
+#include "/public/tp/tp-multitache/Menu.h"
+
 #include "Mother.h"
 
 /////////////////////////////////////////////////////////////////  PRIVATE
