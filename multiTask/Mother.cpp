@@ -49,8 +49,9 @@
 //} //----- End of Name
 
 int main ( )
-{
+{	
 	pid_t noKeyboard;
+	pid_t noHeure = ActiverHeure();
 	
 	InitialiserApplication( XTERM );
 	
@@ -62,6 +63,7 @@ int main ( )
 	{
 		waitpid( noKeyboard, NULL, 0 );	
 	}
+	kill(noHeure, SIGUSR2);
 	TerminerApplication();
 	
 	return 0;

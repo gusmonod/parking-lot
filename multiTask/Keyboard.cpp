@@ -59,6 +59,15 @@ void Commande ( char code, unsigned int valeur )
 		case 'Q' :
 			exit(0);
 		break;
+		case 'P' :
+			
+		break;
+		case 'A' :
+			
+		break;
+		case 'S' :
+			
+		break;
 	}
 }
 
