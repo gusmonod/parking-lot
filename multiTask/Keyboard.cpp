@@ -1,5 +1,5 @@
 /*************************************************************************
-   Mother  -  The mother task creating the context and launching the app
+   Keyboard  -  The keyboard task managing the inputs
                              -------------------
     date                 : Feb. 19 2014
     copyright            : (C) 2014 Yannick Marion & Gustave Monod
@@ -7,19 +7,18 @@
                            gustave.monod@insa-lyon.fr
 *************************************************************************/
 
-//---------- Realization of the <Mother> task (file Mother.cpp) ----------
+//---------- Realization of the <Keyboard> task (file Keyboard.cpp) ----------
 
 /////////////////////////////////////////////////////////////////  INCLUDE
 //--------------------------------------------------------- System include
 #include <cstdio>
 #include <unistd.h>
-#include <sys/wait.h>
 
 //------------------------------------------------------- Personal include
 #include "Heure.h"
 #include "Outils.h"
+#include "Menu.h"
 
-#include "Mother.h"
 #include "Keyboard.h"
 
 /////////////////////////////////////////////////////////////////  PRIVATE
@@ -48,21 +47,18 @@
 //{
 //} //----- End of Name
 
-int main ( )
+void Keyboard ( )
 {
-	pid_t noKeyboard;
-	
-	InitialiserApplication( XTERM );
-	
-	if( ( noKeyboard = fork ( ) ) == 0 )
-	{
-		Keyboard( );
-	}
-	else
-	{
-		waitpid( noKeyboard, NULL, 0 );	
-	}
-	TerminerApplication();
-	
-	return 0;
+	Menu();
 }
+
+void Commande ( char code, unsigned int valeur )
+{
+	switch(code)
+	{
+		case 'Q' :
+			exit(0);
+		break;
+	}
+}
+
