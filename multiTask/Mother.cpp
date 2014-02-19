@@ -14,9 +14,9 @@
 #include <stdio.h>
 
 //------------------------------------------------------- Personal include
-#include "/public/tp/tp-multitache/Heure.h"
-#include "/public/tp/tp-multitache/Outils.h"
-#include "/public/tp/tp-multitache/Menu.h"
+#include "Heure.h"
+#include "Outils.h"
+#include "Menu.h"
 
 #include "Mother.h"
 
@@ -48,6 +48,8 @@
 
 int main ( )
 {
-	printf( "Hello, world!" );
+	InitialiserApplication( XTERM );
+	Sleep(10);
+	TerminerApplication();
 	return 0;
 }
