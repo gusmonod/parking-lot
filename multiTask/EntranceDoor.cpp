@@ -1,5 +1,5 @@
 /*************************************************************************
-   Mother  -  The mother task creating the context and launching the app
+   EntranceDoor  -  The EntranceDoor task managing the Entrance
                              -------------------
     date                 : Feb. 19 2014
     copyright            : (C) 2014 Yannick Marion & Gustave Monod
@@ -7,19 +7,18 @@
                            gustave.monod@insa-lyon.fr
 *************************************************************************/
 
-//---------- Realization of the <Mother> task (file Mother.cpp) ----------
+//---- Realization of the <EntranceDoor> task (file EntranceDoor.cpp) ----
 
 /////////////////////////////////////////////////////////////////  INCLUDE
 //--------------------------------------------------------- System include
 #include <cstdio>
 #include <unistd.h>
-#include <sys/wait.h>
 
 //------------------------------------------------------- Personal include
 #include "Heure.h"
 #include "Outils.h"
+#include "Menu.h"
 
-#include "Mother.h"
 #include "Keyboard.h"
 
 /////////////////////////////////////////////////////////////////  PRIVATE
@@ -40,6 +39,28 @@
 //{
 //} //----- End of name
 
+static void stop ( int signal )
+// How to use:
+//
+// Contract:
+//
+// Algorithm:
+//
+{
+	end();
+} //----- End of stop
+
+static void end ( )
+// How to use:
+//
+// Contract:
+//
+// Algorithm:
+//
+{
+	exit(0);
+} //----- End of end
+
 //////////////////////////////////////////////////////////////////  PUBLIC
 //------------------------------------------------------- Public functions
 // type Name ( parameter list )
@@ -48,36 +69,26 @@
 //{
 //} //----- End of Name
 
+void EntranceDoor ( TypeBarriere type )
+// Algorithm:
+// 
+{
+	struct sigaction sa;
+	sa.sa_handler = stop;
 
-int main ( )
-{	
-	pid_t noKeyboard;
-	pid_t noHeure = ActiverHeure();
-	pid_t noPortesEntree[NB_BARRIERES_ENTREE];
-	
-	InitialiserApplication( XTERM );
-
-	for ( int i = 0; i < NB_BARRIERES_ENTREE; ++i ) {
-		noPortesEntree[i] = fork();
-		if (0 == noPortesEntree[i]) // fils
-		{
-			EntranceDoor(i+1);
-		}
-	}
-
-	if( ( noKeyboard = fork ( ) ) == 0 )
+	switch(type)
 	{
-		Keyboard( );
+		case AUCUNE:
+		case SORTIE_GASTON_BERGER:
+			end();
+			break;
+		case PROF_BLAISE_PASCAL:
+			break;
+		case AUTRE_BLAISE_PASCAL:
+			break;
+		case ENTREE_GASTON_BERGER:
+			break;
 	}
-	else
-	{
-		waitpid( noKeyboard, NULL, 0 );
-		for (int i = 0; i < NB_BARRIERES_ENTREE; ++i) {
-			waitpid(noPortesEntree[i], NULL, 0);
-		}
-	}
-	kill(noHeure, SIGUSR2);
-	TerminerApplication();
-	
-	return 0;
-}
+} //----- End of EntranceDoor
+
+

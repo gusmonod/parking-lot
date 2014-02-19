@@ -48,11 +48,18 @@
 //} //----- End of Name
 
 void Keyboard ( )
+// Algorithm:
+// Infinitely asks the Menu for input
 {
-	Menu();
-}
+	for(;;)
+	{
+		Menu();
+	}
+} //----- End of Keyboard
 
 void Commande ( char code, unsigned int valeur )
+// Algorithm:
+// Checks the code and does the appropiate action
 {
 	switch(code)
 	{
@@ -69,5 +76,5 @@ void Commande ( char code, unsigned int valeur )
 			
 		break;
 	}
-}
+} //----- End of 
 
