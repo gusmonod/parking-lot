@@ -11,7 +11,8 @@
 
 /////////////////////////////////////////////////////////////////  INCLUDE
 //--------------------------------------------------------- System include
-#include <stdio.h>
+#include <cstdio>
+#include <unistd.h>
 
 //------------------------------------------------------- Personal include
 #include "Heure.h"
@@ -49,7 +50,7 @@
 int main ( )
 {
 	InitialiserApplication( XTERM );
-	Sleep(10);
+	sleep(10);
 	TerminerApplication();
 	return 0;
 }
