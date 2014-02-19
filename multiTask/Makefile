@@ -1,26 +1,37 @@
-RM=rm
-ECHO=echo
-COMP=gcc
-EDL=gcc
 EXE=Parking
-CLEAN=efface
+
+COMP=g++
 COMP_FLAGS=-Wall
+
+EDL=g++
 EDL_FLAGS=
-LIBS=
-LIB_PATH=
-INC_PATH=
+
+CLEAN=clean
+DEV=dev
+
+LIBS=-lncurse -ltcl -ltp
+LIB_PATH=-L /shares/public/tp/tp-multitache/
+
+INC=
+INC_PATH=-I /shares/public/tp/tp-multitache/
+
+RM=rm
 RM_FLAGS=-f
+ECHO=echo
 
 INT=Mother.h
 
 REAL=$(INT:.h=.cpp)
 OBJ=$(INT:.h=.o)
 
-.PHONY: $(CLEAN)
+.PHONY: $(CLEAN) $(DEV)
 
 $(EXE): $(OBJ)
 	$(EDL) $(EDL_FLAGS) $(LIB_PATH) -o $(EXE) $(OBJ) $(LIBS)
 	$(RM) $(RM_FLAGS) $(OBJ)
+
+$(DEV):
+	INC_PATH=/Users/gustavemonod/Desktop/
 
 %.o: %.cpp %.h
 	$(ECHO) Compiling $<...
