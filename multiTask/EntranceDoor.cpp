@@ -13,8 +13,11 @@
 //--------------------------------------------------------- System include
 #include <cstdio>
 #include <unistd.h>
+<<<<<<< HEAD
 #include <signal.h>
 #include <errno.h>
+=======
+>>>>>>> 4f0923bb9212ca6e6f0f15672adfff9ed66ef7eb
 
 //------------------------------------------------------- Personal include
 #include "Heure.h"
@@ -31,8 +34,11 @@
 //------------------------------------------------------- Static variables
 
 //------------------------------------------------------ Private functions
+<<<<<<< HEAD
 static void end();
 
+=======
+>>>>>>> 4f0923bb9212ca6e6f0f15672adfff9ed66ef7eb
 //static type name ( parameter list )
 // How to use:
 //
