@@ -1,5 +1,5 @@
 /*************************************************************************
-   Mother  -  The mother task creating the context and launching the app
+   EntranceDoor  -  The EntranceDoor task managing the Entrance
                              -------------------
     date                 : Feb. 19 2014
     copyright            : (C) 2014 Yannick Marion & Gustave Monod
@@ -7,21 +7,21 @@
                            gustave.monod@insa-lyon.fr
 *************************************************************************/
 
-//---------- Realization of the <Mother> task (file Mother.cpp) ----------
+//---- Realization of the <EntranceDoor> task (file EntranceDoor.cpp) ----
 
 /////////////////////////////////////////////////////////////////  INCLUDE
 //--------------------------------------------------------- System include
 #include <cstdio>
 #include <unistd.h>
-#include <sys/wait.h>
+#include <signal.h>
+#include <errno.h>
 
 //------------------------------------------------------- Personal include
 #include "Heure.h"
 #include "Outils.h"
+#include "Menu.h"
 
-#include "Mother.h"
 #include "Keyboard.h"
-#include "EntranceDoor.h"
 
 /////////////////////////////////////////////////////////////////  PRIVATE
 //-------------------------------------------------------------- Constants
@@ -31,6 +31,8 @@
 //------------------------------------------------------- Static variables
 
 //------------------------------------------------------ Private functions
+static void end();
+
 //static type name ( parameter list )
 // How to use:
 //
@@ -41,6 +43,28 @@
 //{
 //} //----- End of name
 
+static void stop ( int signal )
+// How to use:
+//
+// Contract:
+//
+// Algorithm:
+//
+{
+	end();
+} //----- End of stop
+
+static void end ( )
+// How to use:
+//
+// Contract:
+//
+// Algorithm:
+//
+{
+	exit(0);
+} //----- End of end
+
 //////////////////////////////////////////////////////////////////  PUBLIC
 //------------------------------------------------------- Public functions
 // type Name ( parameter list )
@@ -49,48 +73,36 @@
 //{
 //} //----- End of Name
 
-
-int main ( )
+void EntranceDoor ( TypeBarriere type )
+// Algorithm:
+// 
 {
-	// First thing to do: Initialize app
-	InitialiserApplication( XTERM );
+	struct sigaction action;
+	action.sa_handler = stop;
+	sigemptyset(&action.sa_mask);
+	action.sa_flags = 0;
+	sigaction(SIGUSR2, &action, NULL);
 
-	// The pid of the multiple tasks
-	pid_t noKeyboard;
-	pid_t noHour = ActiverHeure();
-	pid_t noEntranceDoors[NB_BARRIERES_ENTREE];
-	
-	for (unsigned int i = 0; i < NB_BARRIERES_ENTREE; ++i) {
-		noEntranceDoors[i] = fork();
-		if (0 == noEntranceDoors[i]) // Child process
-		{
-			// Giving the correct type of door as argument
-			EntranceDoor((TypeBarriere)(i+ 1));
+	switch(type)
+	{
+		case AUCUNE:
+		case SORTIE_GASTON_BERGER:
+			end();
+			break;
+		case PROF_BLAISE_PASCAL:
+			break;
+		case AUTRE_BLAISE_PASCAL:
+			break;
+		case ENTREE_GASTON_BERGER:
+			break;
+	}
+
+	for (;;) {
+		sleep(20);
+		if (EINTR == errno) {
+			continue;
 		}
 	}
-	
-	if( ( noKeyboard = fork ( ) ) == 0 )
-	{
-		Keyboard( );
-	}
-	else
-	{
-		// Waiting for end synchronization from Keyboard
-		waitpid( noKeyboard, NULL, 0 );
+} //----- End of EntranceDoor
 
-		// Killing the NB_BARRIERES_ENTREE entrance doors
-		for (unsigned int i = 0; i < NB_BARRIERES_ENTREE; ++i) {
-			kill(noEntranceDoors[i], SIGUSR2);
-			waitpid(noEntranceDoors[i], NULL, 0);
-		}
 
-		// Killing the Hour task
-		kill(noHour, SIGUSR2);
-		waitpid( noHour, NULL, 0 );
-
-		// And finally, terminating the application
-		TerminerApplication();
-	}
-	
-	return 0;
-}
