@@ -19,7 +19,7 @@ RM=rm
 RM_FLAGS=-f
 ECHO=echo
 
-INT=Mother.h Keyboard.h EntranceDoor.h
+INT=Mother.h Keyboard.h EntranceDoor.h Information.h
 
 REAL=$(INT:.h=.cpp)
 OBJ=$(INT:.h=.o)

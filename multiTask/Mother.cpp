@@ -15,10 +15,14 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
 //------------------------------------------------------- Personal include
 #include "Heure.h"
 #include "Outils.h"
 
+#include "Information.h"
 #include "Mother.h"
 #include "Keyboard.h"
 #include "EntranceDoor.h"
@@ -29,8 +33,38 @@
 //------------------------------------------------------------------ Types
 
 //------------------------------------------------------- Static variables
+static int shmId;
 
 //------------------------------------------------------ Private functions
+static void init    ( );
+// How to use:
+
+static void destroy ( );
+// How to use:
+
+static void init ( )
+// Algorithm:
+// Initializes app, and creates the IPC objects used to communicate.
+{
+	// First thing to do: Initialize app
+	InitialiserApplication( XTERM );
+	// Creating the shared memory
+	// (characteristics can be found in Information module)
+	shmId = shmget( ftok( PROGRAM_NAME, FTOK_CHAR ), SHM_SIZE,
+					IPC_CREAT | RIGHTS );
+}
+
+static void destroy ( )
+// Algorithm:
+// Deletes the IPC objects used to communicate and destroys the app.
+{
+	// Deletes the shared memory
+	shmctl( shmId, 0, IPC_RMID );
+
+	// Terminates the app
+	TerminerApplication();
+}
+
 //static type name ( parameter list )
 // How to use:
 //
@@ -48,19 +82,19 @@
 //
 //{
 //} //----- End of Name
-
+#define NB_BARRIERES_ENTREE 1
 
 int main ( )
 {
-	// First thing to do: Initialize app
-	InitialiserApplication( XTERM );
+	init( );
 
 	// The pid of the multiple tasks
 	pid_t noKeyboard;
 	pid_t noHour = ActiverHeure();
 	pid_t noEntranceDoors[NB_BARRIERES_ENTREE];
-	
-	for (unsigned int i = 0; i < NB_BARRIERES_ENTREE; ++i) {
+
+	for (unsigned int i = 0; i < NB_BARRIERES_ENTREE ; ++i)
+	{
 		noEntranceDoors[i] = fork();
 		if (0 == noEntranceDoors[i]) // Child process
 		{
@@ -68,7 +102,7 @@ int main ( )
 			EntranceDoor((TypeBarriere)(i+ 1));
 		}
 	}
-	
+
 	if( ( noKeyboard = fork ( ) ) == 0 )
 	{
 		Keyboard( );
@@ -79,7 +113,8 @@ int main ( )
 		waitpid( noKeyboard, NULL, 0 );
 
 		// Killing the NB_BARRIERES_ENTREE entrance doors
-		for (unsigned int i = 0; i < NB_BARRIERES_ENTREE; ++i) {
+		for (unsigned int i = 0; i < NB_BARRIERES_ENTREE ; ++i)
+		{
 			kill(noEntranceDoors[i], SIGUSR2);
 			waitpid(noEntranceDoors[i], NULL, 0);
 		}
@@ -89,7 +124,7 @@ int main ( )
 		waitpid( noHour, NULL, 0 );
 
 		// And finally, terminating the application
-		TerminerApplication();
+		destroy( );
 	}
 	
 	return 0;

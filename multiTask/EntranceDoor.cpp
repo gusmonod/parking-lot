@@ -1,5 +1,5 @@
 /*************************************************************************
-   EntranceDoor  -  The EntranceDoor task managing the Entrance
+                        EntranceDoor  -  description
                              -------------------
     date                 : Feb. 19 2014
     copyright            : (C) 2014 Yannick Marion & Gustave Monod
@@ -13,17 +13,18 @@
 //--------------------------------------------------------- System include
 #include <cstdio>
 #include <unistd.h>
-<<<<<<< HEAD
 #include <signal.h>
 #include <errno.h>
-=======
->>>>>>> 4f0923bb9212ca6e6f0f15672adfff9ed66ef7eb
+
+#include <sys/ipc.h>
+#include <sys/shm.h>
 
 //------------------------------------------------------- Personal include
 #include "Heure.h"
 #include "Outils.h"
 #include "Menu.h"
 
+#include "Information.h"
 #include "Keyboard.h"
 
 /////////////////////////////////////////////////////////////////  PRIVATE
@@ -32,13 +33,21 @@
 //------------------------------------------------------------------ Types
 
 //------------------------------------------------------- Static variables
+static char *shm;
 
 //------------------------------------------------------ Private functions
-<<<<<<< HEAD
-static void end();
+static int  init    ( );
+// How to use:
+// Initialization process of the <EntranceDoor> task
 
-=======
->>>>>>> 4f0923bb9212ca6e6f0f15672adfff9ed66ef7eb
+static void destroy ( );
+// How to use:
+// Destruction phase of the <EntranceDoor> task
+
+static void handle  ( int signal );
+// How to use:
+// Handles the signals received
+
 //static type name ( parameter list )
 // How to use:
 //
@@ -49,18 +58,51 @@ static void end();
 //{
 //} //----- End of name
 
-static void stop ( int signal )
-// How to use:
-//
-// Contract:
-//
+static int init ( )
 // Algorithm:
-//
+// Sets the signal handler, attaches the shared memory to the shm pointer,
+// and returns its id
 {
-	end();
-} //----- End of stop
+	struct sigaction action;
+	action.sa_handler = handle;
+	sigemptyset(&action.sa_mask);
+	action.sa_flags = 0;
+	sigaction(SIGUSR2, &action, NULL);
 
-static void end ( )
+	// Getting the shared memory
+	// (characteristics can be found in Information module)
+	int shmId = shmget( ftok ( PROGRAM_NAME, FTOK_CHAR ), SHM_SIZE, RIGHTS );
+
+	// Attaching shared memory
+	shm = (char *) shmat( shmId, NULL, 0 );
+
+	char msg[1024];
+	sprintf(msg, "%d: Je suis en phase d'initialisation", getpid());
+	Afficher( MESSAGE, msg );
+	sleep( 3 );
+
+	return shmId;
+} //----- End of init
+
+static void destroy ( )
+// Algorithm:
+// Detaches the shared memory
+{
+	// Destruction of the shared memory
+	// shmctl( shmId, 0, IPC_RMID, 0 );
+
+	// Detaching the shared memory
+	shmdt( shm );
+
+	char msg[1024];
+	sprintf(msg, "%d: Je suis en phase de destruction  ", getpid());
+	Afficher( MESSAGE, msg );
+	sleep( 3 );
+
+	exit( 0 );
+} //----- End of destroy
+
+static void handle ( int signal )
 // How to use:
 //
 // Contract:
@@ -68,8 +110,11 @@ static void end ( )
 // Algorithm:
 //
 {
-	exit(0);
-} //----- End of end
+	if ( SIGUSR2 == signal )
+	{
+		destroy( );
+	}
+} //----- End of handle
 
 //////////////////////////////////////////////////////////////////  PUBLIC
 //------------------------------------------------------- Public functions
@@ -81,34 +126,17 @@ static void end ( )
 
 void EntranceDoor ( TypeBarriere type )
 // Algorithm:
-// 
+//
 {
-	struct sigaction action;
-	action.sa_handler = stop;
-	sigemptyset(&action.sa_mask);
-	action.sa_flags = 0;
-	sigaction(SIGUSR2, &action, NULL);
-
-	switch(type)
+	init( );
+	for (;;)
 	{
-		case AUCUNE:
-		case SORTIE_GASTON_BERGER:
-			end();
-			break;
-		case PROF_BLAISE_PASCAL:
-			break;
-		case AUTRE_BLAISE_PASCAL:
-			break;
-		case ENTREE_GASTON_BERGER:
-			break;
+		char msg[1024];
+		sprintf(msg, "%d: Je suis en phase moteur          ", getpid());
+		Afficher( MESSAGE, msg );
+		sleep( 3 );
 	}
-
-	for (;;) {
-		sleep(20);
-		if (EINTR == errno) {
-			continue;
-		}
-	}
+	destroy( );
 } //----- End of EntranceDoor
 
 
