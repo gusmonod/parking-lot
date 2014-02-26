@@ -17,11 +17,11 @@
 /////////////////////////////////////////////////////////////////  PRIVATE
 //-------------------------------------------------------------- Constants
 int  const RIGHTS = 0660;
-char const PROGRAM_NAME[] = "./Parking";
+char const PROGRAM_NAME[] = "/home/gustavemonod/multitask/multiTask/Parking";
 char const FTOK_CHAR = '3';
 
 // Used for the shared memory:
-int  const SHM_SIZE = 1;
+int  const SHM_SIZE = sizeof(struct m);
 
 //------------------------------------------------------------------ Types
 

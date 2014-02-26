@@ -33,7 +33,7 @@
 //------------------------------------------------------------------ Types
 
 //------------------------------------------------------- Static variables
-static char *shm;
+static struct m *shm;
 
 //------------------------------------------------------ Private functions
 static int  init    ( );
@@ -74,10 +74,12 @@ static int init ( )
 	int shmId = shmget( ftok ( PROGRAM_NAME, FTOK_CHAR ), SHM_SIZE, RIGHTS );
 
 	// Attaching shared memory
-	shm = (char *) shmat( shmId, NULL, 0 );
+	shm = (struct m *) shmat( shmId, NULL, 0 );
 
 	char msg[1024];
-	sprintf(msg, "%d: Je suis en phase d'initialisation", getpid());
+	shm->pid = getpid();
+	shm->c = 'i';
+	sprintf(msg, "%d: Je suis en phase d'%cnitialisation", shm->pid, shm->c);
 	Afficher( MESSAGE, msg );
 	sleep( 3 );
 
@@ -91,13 +93,19 @@ static void destroy ( )
 	// Destruction of the shared memory
 	// shmctl( shmId, 0, IPC_RMID, 0 );
 
+	char msg[1024];
+	shm->pid = getpid();
+	shm->c = 'd';
+	sprintf(msg, "%d: Je suis en phase de %cestruction  ", shm->pid, shm->c);
+	Afficher( MESSAGE, msg );
+	sleep( 5 );
+
+	shm->pid = getpid();
+	shm->c = 'k';
+
 	// Detaching the shared memory
 	shmdt( shm );
 
-	char msg[1024];
-	sprintf(msg, "%d: Je suis en phase de destruction  ", getpid());
-	Afficher( MESSAGE, msg );
-	sleep( 3 );
 
 	exit( 0 );
 } //----- End of destroy
@@ -112,6 +120,7 @@ static void handle ( int signal )
 {
 	if ( SIGUSR2 == signal )
 	{
+		sleep( 5 );
 		destroy( );
 	}
 } //----- End of handle
@@ -132,9 +141,11 @@ void EntranceDoor ( TypeBarriere type )
 	for (;;)
 	{
 		char msg[1024];
-		sprintf(msg, "%d: Je suis en phase moteur          ", getpid());
+		shm->pid = getpid();
+		shm->c = 'm';
+		sprintf(msg, "%d: Je suis en phase %coteur          ", shm->pid, shm->c);
 		Afficher( MESSAGE, msg );
-		sleep( 3 );
+		sleep( 5 );
 	}
 	destroy( );
 } //----- End of EntranceDoor

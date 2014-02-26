@@ -22,6 +22,7 @@
 //------------------------------------------------------------------------
 
 //-------------------------------------------------------- Used interfaces
+#include <sys/types.h>
 
 //-------------------------------------------------------------- Constants
 extern int  const RIGHTS; // 0666
@@ -29,7 +30,13 @@ extern char const PROGRAM_NAME[]; // ./Parking
 extern char const FTOK_CHAR; // '3'
 
 // Used for the shared memory:
-extern int  const SHM_SIZE; // 1
+struct m
+{
+	pid_t pid;
+	char c;
+};
+
+extern int  const SHM_SIZE; // sizeof(struct m)
 
 //------------------------------------------------------------------ Types
 

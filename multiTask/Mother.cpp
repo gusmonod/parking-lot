@@ -82,7 +82,6 @@ static void destroy ( )
 //
 //{
 //} //----- End of Name
-#define NB_BARRIERES_ENTREE 1
 
 int main ( )
 {
@@ -115,12 +114,12 @@ int main ( )
 		// Killing the NB_BARRIERES_ENTREE entrance doors
 		for (unsigned int i = 0; i < NB_BARRIERES_ENTREE ; ++i)
 		{
-			kill(noEntranceDoors[i], SIGUSR2);
-			waitpid(noEntranceDoors[i], NULL, 0);
+			kill( noEntranceDoors[i], SIGUSR2 );
+			waitpid( noEntranceDoors[i], NULL, 0 );
 		}
 
 		// Killing the Hour task
-		kill(noHour, SIGUSR2);
+		kill( noHour, SIGUSR2 );
 		waitpid( noHour, NULL, 0 );
 
 		// And finally, terminating the application
