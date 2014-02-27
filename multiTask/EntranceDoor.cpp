@@ -33,7 +33,7 @@
 //------------------------------------------------------------------ Types
 
 //------------------------------------------------------- Static variables
-static struct m *shm;
+static struct mParking *shm;
 
 //------------------------------------------------------ Private functions
 static int  init    ( );
