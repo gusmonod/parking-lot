@@ -11,17 +11,26 @@
 
 /////////////////////////////////////////////////////////////////  INCLUDE
 //--------------------------------------------------------- System include
-//-------------------------------------------------------- Include système
+#include <sys/sem.h>
+
+//------------------------------------------------------- Personal include
 #include "Information.h"
 
 /////////////////////////////////////////////////////////////////  PRIVATE
 //-------------------------------------------------------------- Constants
 int  const RIGHTS = 0660;
-char const PROGRAM_NAME[] = "/home/gustavemonod/multitask/multiTask/Parking";
+char const PROGRAM_NAME[] = "./Parking";
 char const FTOK_CHAR = '3';
 
 // Used for the shared memory:
 int  const SHM_SIZE = sizeof(struct m);
+
+// Mutex for the shared memory
+struct sembuf const MUTEX_ACCESS = { 0, -1, 0 };
+struct sembuf const MUTEX_FREE   = { 0,  1, 0 };
+int  const MUTEX_NB = 1;
+int  const MUTEX_OK = 1;
+int  const MUTEX_KO = 0;
 
 //------------------------------------------------------------------ Types
 

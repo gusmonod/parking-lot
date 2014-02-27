@@ -1,5 +1,5 @@
 /*************************************************************************
-   Keyboard  -  The keyboard task managing the inputs
+                          Keyboard  -  description
                              -------------------
     date                 : Feb. 19 2014
     copyright            : (C) 2014 Yannick Marion & Gustave Monod
@@ -12,10 +12,13 @@
 #define KEYBOARD_H
 
 //------------------------------------------------------------------------
-// Role of the <Mother> task
+// Role of the <Keyboard> task
 //
-// Creates and destroys:
-// * Keyboard
+// Creates:
+// * Keyboard listener
+//
+// Terminates task and destroys everything when:
+// * The input to quit is received
 //------------------------------------------------------------------------
 
 /////////////////////////////////////////////////////////////////  INCLUDE

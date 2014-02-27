@@ -7,7 +7,7 @@
                            gustave.monod@insa-lyon.fr
 *************************************************************************/
 
-//---------- Interface of the <EntranceDoor> task (file EntranceDoor.h) --------------
+//---- Interface of the <EntranceDoor> task (file EntranceDoor.h) --------
 #if !defined ( ENTRANCEDOOR_H )
 #define ENTRANCEDOOR_H
 
