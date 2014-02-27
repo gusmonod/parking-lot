@@ -34,6 +34,8 @@ extern int  const RIGHTS; // 0666
 extern char const PROGRAM_NAME[]; // ./Parking
 extern char const FTOK_CHAR; // '3'
 
+extern unsigned int NB_CHAR_STATE;
+
 // Represents a waiting car in front of an entrance
 struct WaitingCar
 {
@@ -54,6 +56,7 @@ struct ParkedCar
 struct ParkingLot
 {
 	unsigned int fullSpots;
+	unsigned int nextCarNo;
 	struct WaitingCar waitingCars[NB_BARRIERES_ENTREE];
 	struct ParkedCar parkedCars[NB_PLACES];
 };

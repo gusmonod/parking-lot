@@ -62,6 +62,7 @@ static void init ( )
 	shmParkingLot = ( struct ParkingLot * ) shmat( shmId, NULL, 0 );
 
 	shmParkingLot->fullSpots = 0;
+	shmParkingLot->nextCarNo = 1;
 
 	for ( unsigned int i = 0; i < NB_BARRIERES_ENTREE; ++i )
 	{

@@ -22,6 +22,8 @@ int  const RIGHTS = 0660;
 char const PROGRAM_NAME[] = "./Parking";
 char const FTOK_CHAR = '3';
 
+unsigned int NB_CHAR_STATE = 18;
+
 // Used for the shared memory:
 int  const SHM_SIZE = sizeof(struct ParkingLot);
 
