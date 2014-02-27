@@ -56,23 +56,25 @@ static void init ( )
 	shmId = shmget( ftok( PROGRAM_NAME, FTOK_CHAR ), SHM_SIZE,
 					IPC_CREAT | RIGHTS );
 
-	struct Parking * shmParking;
+	struct ParkingLot * shmParkingLot;
 
-	shmParking = ( struct Parking * ) shmat( shmId, NULL, 0 );
-	
-	shmParking->NbPlacesDisponibles = NB_PLACES;
+	// Initialisation of the shared memory
+	shmParkingLot = ( struct ParkingLot * ) shmat( shmId, NULL, 0 );
 
-	for ( int i = 0; i < NB_BARRIERES_ENTREE; ++i)
+	shmParkingLot->fullSpots = 0;
+
+	for ( unsigned int i = 0; i < NB_BARRIERES_ENTREE; ++i )
 	{
-		(shmParking->WaitingCars[i]).userType = AUCUN;
+		( shmParkingLot->waitingCars[i] ).userType = AUCUN;
 	}
-	for (int i = 0; i < NB_PLACES; ++i)
+	for ( unsigned int i = 0; i < NB_PLACES; ++i )
 	{
-		(shmParking->ParkedCars[i]).userType = AUCUN;
+		( shmParkingLot->parkedCars[i] ).userType = AUCUN;
 	}	
 
-	shmdt( shmParking );
-	shmParking = NULL;
+	// Initialization done, detaching memory
+	shmdt( shmParkingLot );
+	shmParkingLot = NULL;
 
 	// Creating the shared memory mutex
 	shmMutexId = semget( ftok( PROGRAM_NAME, FTOK_CHAR), MUTEX_NB,

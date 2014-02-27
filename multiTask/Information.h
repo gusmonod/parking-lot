@@ -51,15 +51,15 @@ struct ParkedCar
 };
 
 // Used for the shared memory:
-struct Parking
+struct ParkingLot
 {
-	unsigned int NbPlacesDisponibles;
-	struct WaitingCar WaitingCars[NB_BARRIERES_ENTREE];
-	struct ParkedCar ParkedCars[NB_PLACES];
+	unsigned int fullSpots;
+	struct WaitingCar waitingCars[NB_BARRIERES_ENTREE];
+	struct ParkedCar parkedCars[NB_PLACES];
 };
 
 
-extern int  const SHM_SIZE; // sizeof(struct Parking)
+extern int  const SHM_SIZE; // sizeof(struct ParkingLot)
 
 extern struct sembuf const MUTEX_ACCESS; // Mutex for the shared memory
 extern struct sembuf const MUTEX_FREE;

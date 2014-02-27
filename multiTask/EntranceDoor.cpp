@@ -34,7 +34,7 @@
 //------------------------------------------------------------------ Types
 
 //------------------------------------------------------- Static variables
-static struct Parking *shm;
+static struct ParkingLot *shmParkingLot;
 static int shmMutexId;
 
 static struct sembuf mutexAccess = MUTEX_ACCESS;
@@ -79,7 +79,7 @@ static int init ( )
 	int shmId = shmget( ftok( PROGRAM_NAME, FTOK_CHAR ), SHM_SIZE, RIGHTS );
 
 	// Attaching shared memory
-	shm = (struct Parking *) shmat( shmId, NULL, 0 );
+	shmParkingLot = (struct ParkingLot *) shmat( shmId, NULL, 0 );
 
 	// Getting the shared memory mutex
 	shmMutexId = semget( ftok( PROGRAM_NAME, FTOK_CHAR), MUTEX_NB, RIGHTS);
@@ -102,14 +102,9 @@ static void destroy ( )
 // Algorithm:
 // Detaches the shared memory
 {
-	char msg[1024];
-	sprintf(msg, "%d: Je suis en phase de destruction  ", getpid());
-	Afficher( MESSAGE, msg );
-	sleep( 5 );
-
 	// Detaching the shared memory
-	shmdt( shm );
-	shm = NULL;
+	shmdt( shmParkingLot );
+	shmParkingLot = NULL;
 
 	exit( 0 );
 } //----- End of destroy
@@ -124,7 +119,6 @@ static void handle ( int signal )
 {
 	if ( SIGUSR2 == signal )
 	{
-		sleep( 5 );
 		destroy( );
 	}
 } //----- End of handle
@@ -144,8 +138,11 @@ void EntranceDoor ( TypeBarriere type )
 	init( );
 	for (;;)
 	{
+		// Waiting for new spot
+		while ( NB_PLACES == shmParkingLot->fullSpots );
+
 		char msg[1024];
-		sprintf(msg, "%d: Je suis en phase moteur          ", getpid());
+		sprintf(msg, "%d: Je vois des places disponibles   ", getpid());
 		Afficher( MESSAGE, msg );
 		sleep( 5 );
 	}
