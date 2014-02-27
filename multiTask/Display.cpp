@@ -1,5 +1,5 @@
 /*************************************************************************
-                           Mother  -  description
+   TestPartage  -  The mother task creating the context and launching the app
                              -------------------
     date                 : Feb. 19 2014
     copyright            : (C) 2014 Yannick Marion & Gustave Monod
@@ -7,26 +7,22 @@
                            gustave.monod@insa-lyon.fr
 *************************************************************************/
 
-//---------- Realization of the <Mother> task (file Mother.cpp) ----------
+//---------- Realization of the <TestPartage> task (file TestPartage.cpp) ----------
 
 /////////////////////////////////////////////////////////////////  INCLUDE
 //--------------------------------------------------------- System include
+#include <iostream>
 #include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
 #include <sys/wait.h>
 
 #include <sys/ipc.h>
 #include <sys/shm.h>
-#include <sys/sem.h>
 
 //------------------------------------------------------- Personal include
-#include "Heure.h"
-#include "Outils.h"
-
 #include "Information.h"
-#include "Mother.h"
-#include "Keyboard.h"
-#include "EntranceDoor.h"
+#include "Display.h"
 
 /////////////////////////////////////////////////////////////////  PRIVATE
 //-------------------------------------------------------------- Constants
@@ -34,8 +30,8 @@
 //------------------------------------------------------------------ Types
 
 //------------------------------------------------------- Static variables
-static int shmId;
-static int shmMutexId;
+static int  shmId;
+static struct m *shm;
 
 //------------------------------------------------------ Private functions
 static void init    ( );
@@ -44,37 +40,44 @@ static void init    ( );
 static void destroy ( );
 // How to use:
 
+static void handle  ( int signal );
+
 static void init ( )
 // Algorithm:
 // Initializes app, and creates the IPC objects used to communicate.
 {
-	// First thing to do: Initialize app
-	InitialiserApplication( XTERM );
-
-	// Creating the shared memory
+	struct sigaction action;
+	action.sa_handler = handle;
+	sigemptyset(&action.sa_mask);
+	action.sa_flags = 0;
+	sigaction(SIGUSR2, &action, NULL);
+	// Getting the shared memory
 	// (characteristics can be found in Information module)
-	shmId = shmget( ftok( PROGRAM_NAME, FTOK_CHAR ), SHM_SIZE,
-					IPC_CREAT | RIGHTS );
+	std::cout << "name: " << PROGRAM_NAME << " ftok: " << FTOK_CHAR << std::endl;
+	std::cout << "key: " << ftok( PROGRAM_NAME, FTOK_CHAR ) << std::endl;
+	shmId = shmget( ftok( PROGRAM_NAME, FTOK_CHAR ), SHM_SIZE, RIGHTS );
+	std::cout << "shmId: " << shmId << std::endl;
 
-	// Creating the shared memory mutex
-	shmMutexId = semget( ftok( PROGRAM_NAME, FTOK_CHAR), MUTEX_NB,
-					IPC_CREAT | RIGHTS );
-	// The shared memory is accessible, so the mutex is set to MUTEX_OK
-	semctl( shmMutexId, 0, SETVAL, MUTEX_OK );
+	// Attaching the shared memory
+	shm = (struct m *) shmat( shmId, NULL, 0 );
 }
 
 static void destroy ( )
 // Algorithm:
 // Deletes the IPC objects used to communicate and destroys the app.
 {
-	// Deletes the shared memory
-	shmctl( shmId, 0, IPC_RMID );
+	// Detaches the shared memory
+	shmdt( shm );
+	system( "clear" );
+	exit( 0 );
+}
 
-	// Deletes the shared memory mutex
-	semctl( shmMutexId, 0, IPC_RMID, 0 );
-
-	// Terminates the app
-	TerminerApplication();
+static void handle ( int signal )
+{
+	if ( SIGUSR2 == signal )
+	{
+		destroy( );
+	}
 }
 
 //static type name ( parameter list )
@@ -98,45 +101,11 @@ static void destroy ( )
 int main ( )
 {
 	init( );
-
-	// The pid of the multiple tasks
-	pid_t noKeyboard;
-	pid_t noHour = ActiverHeure();
-	pid_t noEntranceDoors[NB_BARRIERES_ENTREE];
-
-	for (unsigned int i = 0; i < NB_BARRIERES_ENTREE ; ++i)
+	for (;;)
 	{
-		noEntranceDoors[i] = fork();
-		if (0 == noEntranceDoors[i]) // Child process
-		{
-			// Giving the correct type of door as argument
-			EntranceDoor((TypeBarriere)(i+ 1));
-		}
+		std::cout << "Memory: shmid='" << shmId << "' pid= '"
+				  << shm->pid << "' phase='"
+				  << shm->c << "'" << std::endl;
+		sleep( 1 );
 	}
-
-	if( ( noKeyboard = fork ( ) ) == 0 )
-	{
-		Keyboard( );
-	}
-	else
-	{
-		// Waiting for end synchronization from Keyboard
-		waitpid( noKeyboard, NULL, 0 );
-
-		// Killing the NB_BARRIERES_ENTREE entrance doors
-		for (unsigned int i = 0; i < NB_BARRIERES_ENTREE ; ++i)
-		{
-			kill( noEntranceDoors[i], SIGUSR2 );
-			waitpid( noEntranceDoors[i], NULL, 0 );
-		}
-
-		// Killing the Hour task
-		kill( noHour, SIGUSR2 );
-		waitpid( noHour, NULL, 0 );
-
-		// And finally, terminating the application
-		destroy( );
-	}
-	
-	return 0;
 }

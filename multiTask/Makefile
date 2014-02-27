@@ -7,7 +7,7 @@ EDL=g++
 EDL_FLAGS=
 
 CLEAN=clean
-DEV=dev
+DISPLAY=disp
 
 LIBS=-lncurses -ltcl -ltp
 LIB_PATH=-L /shares/public/tp/tp-multitache/
@@ -24,15 +24,22 @@ INT=Mother.h Keyboard.h EntranceDoor.h Information.h
 REAL=$(INT:.h=.cpp)
 OBJ=$(INT:.h=.o)
 
-.PHONY: $(CLEAN) $(DEV)
+.PHONY: $(CLEAN) $(DISPLAY)
 
 $(EXE): $(OBJ)
 	$(EDL) $(EDL_FLAGS) $(LIB_PATH) -o $(EXE) $(OBJ) $(LIBS)
 	$(RM) $(RM_FLAGS) $(OBJ)
 
-$(DEV): INC_PATH=-I /Users/gustavemonod/Desktop/
-$(DEV): LIB_PATH=-L /Users/gustavemonod/Desktop/
-$(DEV): $(EXE)
+$(DISPLAY): EXE=DisplayParking
+$(DISPLAY): INT=Display.h Information.h
+$(DISPLAY): REAL=Display.cpp Information.cpp
+$(DISPLAY): OBJ=Display.o Information.o
+$(DISPLAY):
+	$(ECHO) Compiling $(REAL)...
+	$(COMP) -c $(REAL) $(COMP_FLAGS) $(INC_PATH)
+	$(EDL) $(EDL_FLAGS) $(LIB_PATH) -o $(EXE) $(OBJ) $(LIBS)
+	$(RM) $(RM_FLAGS) $(OBJ)
+
 
 %.o: %.cpp %.h
 	$(ECHO) Compiling $<...

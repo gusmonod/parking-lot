@@ -1,5 +1,5 @@
 /*************************************************************************
-   Mother  -  The mother task creating the context and launching the app
+                           Mother  -  description
                              -------------------
     date                 : Feb. 19 2014
     copyright            : (C) 2014 Yannick Marion & Gustave Monod
@@ -14,8 +14,15 @@
 //------------------------------------------------------------------------
 // Role of the <Mother> task
 //
-// Creates and destroys:
-// * Keyboard
+// Creates:
+// * Shared memory
+// * Mutex for the above shared memory
+// * <Keyboard> task
+// * <Hour> task
+// * <EntranceDoor> tasks (NB_BARRIERES_ENTREE instances)
+//
+// Terminates all tasks and destroys everything when:
+// * The <Keyboard> task is done (meaning the app should quit)
 //------------------------------------------------------------------------
 
 /////////////////////////////////////////////////////////////////  INCLUDE

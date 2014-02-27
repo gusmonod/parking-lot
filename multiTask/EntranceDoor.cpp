@@ -18,6 +18,7 @@
 
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/sem.h>
 
 //------------------------------------------------------- Personal include
 #include "Heure.h"
@@ -33,7 +34,11 @@
 //------------------------------------------------------------------ Types
 
 //------------------------------------------------------- Static variables
-static struct mParking *shm;
+static struct ParkingMemory *shm;
+static int shmMutexId;
+
+static struct sembuf mutexAccess = MUTEX_ACCESS;
+static struct sembuf mutexFree  = MUTEX_FREE;
 
 //------------------------------------------------------ Private functions
 static int  init    ( );
@@ -71,14 +76,21 @@ static int init ( )
 
 	// Getting the shared memory
 	// (characteristics can be found in Information module)
-	int shmId = shmget( ftok ( PROGRAM_NAME, FTOK_CHAR ), SHM_SIZE, RIGHTS );
+	int shmId = shmget( ftok( PROGRAM_NAME, FTOK_CHAR ), SHM_SIZE, RIGHTS );
 
 	// Attaching shared memory
 	shm = (struct m *) shmat( shmId, NULL, 0 );
 
+	// Getting the shared memory mutex
+	shmMutexId = semget( ftok( PROGRAM_NAME, FTOK_CHAR), MUTEX_NB, RIGHTS);
+
 	char msg[1024];
+	/* BEGIN shared memory exclusion */
+	semop( shmMutexId, &mutexAccess, 1 );
 	shm->pid = getpid();
 	shm->c = 'i';
+	semop( shmMutexId, &mutexFree, 1 );
+	/* END   shared memory exclusion */
 	sprintf(msg, "%d: Je suis en phase d'%cnitialisation", shm->pid, shm->c);
 	Afficher( MESSAGE, msg );
 	sleep( 3 );
@@ -94,14 +106,22 @@ static void destroy ( )
 	// shmctl( shmId, 0, IPC_RMID, 0 );
 
 	char msg[1024];
+	/* BEGIN shared memory exclusion */
+	semop( shmMutexId, &mutexAccess, 1 );
 	shm->pid = getpid();
 	shm->c = 'd';
+	semop( shmMutexId, &mutexFree, 1 );
+	/* END   shared memory exclusion */
 	sprintf(msg, "%d: Je suis en phase de %cestruction  ", shm->pid, shm->c);
 	Afficher( MESSAGE, msg );
 	sleep( 5 );
 
+	/* BEGIN shared memory exclusion */
+	semop( shmMutexId, &mutexAccess, 1 );
 	shm->pid = getpid();
 	shm->c = 'k';
+	semop( shmMutexId, &mutexFree, 1 );
+	/* END   shared memory exclusion */
 
 	// Detaching the shared memory
 	shmdt( shm );
@@ -141,8 +161,12 @@ void EntranceDoor ( TypeBarriere type )
 	for (;;)
 	{
 		char msg[1024];
+		/* BEGIN shared memory exclusion */
+		semop( shmMutexId, &mutexAccess, 1 );
 		shm->pid = getpid();
 		shm->c = 'm';
+		semop( shmMutexId, &mutexFree, 1 );
+		/* END   shared memory exclusion */
 		sprintf(msg, "%d: Je suis en phase %coteur          ", shm->pid, shm->c);
 		Afficher( MESSAGE, msg );
 		sleep( 5 );

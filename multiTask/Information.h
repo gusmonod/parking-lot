@@ -23,6 +23,7 @@
 
 //-------------------------------------------------------- Used interfaces
 #include <sys/types.h>
+#include <sys/sem.h>
 
 #include <time.h>
 
@@ -60,6 +61,13 @@ struct parkedCar
 }
 
 extern int  const SHM_SIZE; // sizeof(struct m)
+
+extern struct sembuf const MUTEX_ACCESS; // Mutex for the shared memory
+extern struct sembuf const MUTEX_FREE;
+extern int  const MUTEX_NB;
+extern int  const MUTEX_OK;
+extern int  const MUTEX_KO;
+
 
 //------------------------------------------------------------------ Types
 

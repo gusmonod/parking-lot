@@ -1,5 +1,5 @@
 /*************************************************************************
-   Keyboard  -  The keyboard task managing the inputs
+                          Keyboard  -  description
                              -------------------
     date                 : Feb. 19 2014
     copyright            : (C) 2014 Yannick Marion & Gustave Monod
@@ -7,7 +7,7 @@
                            gustave.monod@insa-lyon.fr
 *************************************************************************/
 
-//---------- Realization of the <Keyboard> task (file Keyboard.cpp) ----------
+//-------- Realization of the <Keyboard> task (file Keyboard.cpp) --------
 
 /////////////////////////////////////////////////////////////////  INCLUDE
 //--------------------------------------------------------- System include
