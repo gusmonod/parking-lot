@@ -31,7 +31,7 @@
 
 //------------------------------------------------------- Static variables
 static int  shmId;
-static struct m *shm;
+static struct Parking *shm;
 
 //------------------------------------------------------ Private functions
 static void init    ( );
@@ -59,7 +59,7 @@ static void init ( )
 	std::cout << "shmId: " << shmId << std::endl;
 
 	// Attaching the shared memory
-	shm = (struct m *) shmat( shmId, NULL, 0 );
+	shm = (struct Parking *) shmat( shmId, NULL, 0 );
 }
 
 static void destroy ( )
@@ -68,6 +68,7 @@ static void destroy ( )
 {
 	// Detaches the shared memory
 	shmdt( shm );
+	shm = NULL;
 	system( "clear" );
 	exit( 0 );
 }
@@ -104,8 +105,7 @@ int main ( )
 	for (;;)
 	{
 		std::cout << "Memory: shmid='" << shmId << "' pid= '"
-				  << shm->pid << "' phase='"
-				  << shm->c << "'" << std::endl;
+				  << getpid() << "'" << std::endl;
 		sleep( 1 );
 	}
 }
