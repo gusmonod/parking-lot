@@ -25,17 +25,40 @@
 #include <sys/types.h>
 #include <sys/sem.h>
 
+#include <time.h>
+
+#include "Outils.h"
+
 //-------------------------------------------------------------- Constants
 extern int  const RIGHTS; // 0666
 extern char const PROGRAM_NAME[]; // ./Parking
 extern char const FTOK_CHAR; // '3'
 
 // Used for the shared memory:
-struct m
+struct mParking
 {
 	pid_t pid;
 	char c;
+	short unsigned int NB_PLACES_MAX;
+	short unsigned int NbPlacesDisponibles;
+	waitingCar WaitingCars[3];
+	parkedCar ParkedCars[8];
 };
+
+// Represents a waiting car in front of an entrance
+struct waitingCar
+{
+	TypeBarriere entranceType;
+	time_t arrivalTime;
+}
+
+// Represents a car in the parking
+struct parkedCar
+{
+	TypeUsager userType;
+	short unsigned int carNumber;
+	time_t parkedSince;
+}
 
 extern int  const SHM_SIZE; // sizeof(struct m)
 

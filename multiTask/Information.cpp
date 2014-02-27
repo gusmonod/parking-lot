@@ -23,7 +23,7 @@ char const PROGRAM_NAME[] = "./Parking";
 char const FTOK_CHAR = '3';
 
 // Used for the shared memory:
-int  const SHM_SIZE = sizeof(struct m);
+int  const SHM_SIZE = sizeof(struct mParking);
 
 // Mutex for the shared memory
 struct sembuf const MUTEX_ACCESS = { 0, -1, 0 };
