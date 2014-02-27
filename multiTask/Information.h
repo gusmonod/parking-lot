@@ -34,33 +34,32 @@ extern int  const RIGHTS; // 0666
 extern char const PROGRAM_NAME[]; // ./Parking
 extern char const FTOK_CHAR; // '3'
 
-// Used for the shared memory:
-struct mParking
-{
-	pid_t pid;
-	char c;
-	short unsigned int NB_PLACES_MAX;
-	short unsigned int NbPlacesDisponibles;
-	waitingCar WaitingCars[3];
-	parkedCar ParkedCars[8];
-};
-
 // Represents a waiting car in front of an entrance
-struct waitingCar
-{
-	TypeBarriere entranceType;
-	time_t arrivalTime;
-}
-
-// Represents a car in the parking
-struct parkedCar
+struct WaitingCar
 {
 	TypeUsager userType;
-	short unsigned int carNumber;
-	time_t parkedSince;
-}
+	TypeBarriere entranceType;
+	time_t arrivalTime;
+};
 
-extern int  const SHM_SIZE; // sizeof(struct m)
+// Represents a car in the parking
+struct ParkedCar
+{
+	TypeUsager userType;
+	unsigned int carNumber;
+	time_t parkedSince;
+};
+
+// Used for the shared memory:
+struct Parking
+{
+	unsigned int NbPlacesDisponibles;
+	struct WaitingCar WaitingCars[NB_BARRIERE_ENTREE];
+	struct ParkedCar ParkedCars[NB_PLACES];
+};
+
+
+extern int  const SHM_SIZE; // sizeof(struct Parking)
 
 extern struct sembuf const MUTEX_ACCESS; // Mutex for the shared memory
 extern struct sembuf const MUTEX_FREE;
