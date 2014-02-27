@@ -21,7 +21,7 @@ char const PROGRAM_NAME[] = "/home/gustavemonod/multitask/multiTask/Parking";
 char const FTOK_CHAR = '3';
 
 // Used for the shared memory:
-int  const SHM_SIZE = sizeof(struct m);
+int  const SHM_SIZE = sizeof(struct mParking);
 
 //------------------------------------------------------------------ Types
 
