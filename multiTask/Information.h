@@ -54,7 +54,7 @@ struct ParkedCar
 struct Parking
 {
 	unsigned int NbPlacesDisponibles;
-	struct WaitingCar WaitingCars[NB_BARRIERE_ENTREE];
+	struct WaitingCar WaitingCars[NB_BARRIERES_ENTREE];
 	struct ParkedCar ParkedCars[NB_PLACES];
 };
 
