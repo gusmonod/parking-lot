@@ -184,16 +184,25 @@ static void savePark ( unsigned int noParkingSpot )
 	Afficher( MESSAGE, msg );
 
 	char state[NB_CHAR_STATE + 1];
-	int carNo;
+
+	struct WaitingCar * pWaitingCar =
+			&( shmParkingLot->waitingCars[AUCUNE + doorType] );
+
+	struct ParkedCar * pParkedCar =
+			&( shmParkingLot->parkedCars[noParkingSpot - 1] );
 
 	/* BEGIN shared memory exclusion */
 	semop( shmMutexId, &mutexAccess, 1 );
-		carNo = ( shmParkingLot->nextCarNo )++;
+		pParkedCar->userType = pWaitingCar->userType;
+		pParkedCar->carNumber = ( shmParkingLot->nextCarNo )++;
+		pParkedCar->parkedSince = time( NULL );
+
+		pWaitingCar->userType = AUCUN;
 	semop( shmMutexId, &mutexFree, 1 );
 	/* END   shared memory exclusion */
 
-	// TODO get real values
-	sprintf( state, "%c  %03d  %09d", userTypeCh( PROF ), carNo, 38914799 );
+	sprintf( state, "%c  %03d %09d", userTypeCh( pParkedCar->userType ),
+			 pParkedCar->carNumber, ( int ) pParkedCar->parkedSince );
 
 	Afficher( ( TypeZone )( ETAT_P1 + noParkingSpot - 1 ), state );
 } //----- End of saveParked
