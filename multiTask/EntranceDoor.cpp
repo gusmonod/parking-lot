@@ -214,6 +214,38 @@ static void savePark ( unsigned int noParkingSpot )
 				   pParkedCar->carNumber, pParkedCar->parkedSince );
 } //----- End of savePark
 
+static void waitForEmptySpot ( )
+{
+	int status;
+	struct sembuf P = SemP( doorType - 1 );
+	// Waiting for a car to exit
+	status = semop( waitSemSetId, &P, 1 );
+
+	if ( -1 == status && EINTR == errno )
+	{
+		waitForEmptySpot( );
+	}
+} //----- End of waitForEmptySpot
+
+static void request ( TypeUsager userType, time_t timeOfRequest )
+{
+	/*
+	struct WaitingCar * pWaitingCar =
+			&( shmParkingLot->waitingCars[AUCUNE + doorType] );
+	int carNb;
+
+	/* BEGIN shared memory exclusion *
+	semop( shmMutexId, &mutexAccess, 1 );
+		pParkedCar->userType = pWaitingCar->userType;
+		pParkedCar->carNumber = ( shmParkingLot->nextCarNo )++;
+		pParkedCar->parkedSince = time( NULL );
+
+		pWaitingCar->userType = AUCUN;
+	semop( shmMutexId, &mutexFree, 1 );
+	/* END   shared memory exclusion */
+	AfficherRequete( doorType, userType, timeOfRequest );
+} //----- End of request
+
 //////////////////////////////////////////////////////////////////  PUBLIC
 //------------------------------------------------------- Public functions
 // type Name ( parameter list )
@@ -232,11 +264,13 @@ void EntranceDoor ( TypeBarriere type )
 	{
 		struct EnterCommand command;
 		int status;
-		status = msgrcv( mbCommandId, &command, ENTER_CMD_SIZE, type , 0 );
+		status = msgrcv( mbCommandId, &command, ENTER_CMD_SIZE,
+						 doorType , 0 );
 		if ( -1 == status && EINTR == errno )
 		{
 			continue; // starts waiting again without parking anyone
 		}
+		DessinerVoitureBarriere( doorType, command.userType );
 
 		char msg[1024];
 		sprintf(msg, "EntranceDoor: je dois faire rentrer un %c",
@@ -249,12 +283,19 @@ void EntranceDoor ( TypeBarriere type )
 		// TODO following line BAD
 		pWaitingCar->userType = command.userType;
 
+		if ( shmParkingLot->fullSpots == NB_PLACES )
+		// The parking is full
+		{
+			request( command.userType, time( NULL ) );
+			waitForEmptySpot( );
+		}
 		// Parking a car
-		if ( -1 == GarerVoiture( type ) )
+		if ( -1 == GarerVoiture( doorType ) )
 		{
 			perror( "Error while trying to park a car" );
 			destroy( );
 		}
+		sleep( 1 ); // To avoid collision during the drawing
 	}
 
 		destroy( );

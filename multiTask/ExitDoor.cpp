@@ -76,8 +76,9 @@ static void carExited ( int signal );
 static void saveExit  ( unsigned int noParkingSpot );
 // How to use:
 // Saves a car into the parking
-//   · Safe (mutex) write in the shared memory of the newly parked car
+//   · Safe (mutex) deleting in the shared memory of the car that exited
 //   · Displays all of its information in the right spot
+//   · Clears all information now unrelevant
 
 //static type name ( parameter list )
 // How to use:
@@ -214,7 +215,7 @@ static void saveExit ( unsigned int noParkingSpot )
 	}
 
 	Effacer( ( TypeZone )( ETAT_P1 + noParkingSpot - 1 ) );
-} //----- End of savePark
+} //----- End of saveExit
 
 //////////////////////////////////////////////////////////////////  PUBLIC
 //------------------------------------------------------- Public functions
