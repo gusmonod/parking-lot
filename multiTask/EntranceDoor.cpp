@@ -17,6 +17,8 @@
 #include <signal.h> // for sigaction
 #include <errno.h>  // for EINTR
 
+#include <map> // for child processes management
+
 #include <sys/ipc.h> // for all IPCS
 #include <sys/shm.h> // for shmget
 #include <sys/sem.h> // for semget
@@ -53,6 +55,8 @@ static struct sembuf mutexAccess = MUTEX_ACCESS;
 static struct sembuf mutexFree  = MUTEX_FREE;
 
 static int waitSemSetId;
+
+static std::map<pid_t, TypeUsager> childrenPid;
 
 //------------------------------------------------------ Private functions
 
@@ -148,6 +152,17 @@ static void endTask ( int signal )
 {
 	if ( SIGUSR2 == signal )
 	{
+		std::map<pid_t, TypeUsager>::iterator it;
+		
+		for(it = childrenPid.begin(); it != childrenPid.end(); ++it)
+		{
+			//Killing every child pid
+			kill( it->first, SIGUSR2 );
+			waitpid( it->first, NULL, 0);
+		}
+		
+		childrenPid.clear();
+	
 		destroy( );
 	}
 } //----- End of endTask
@@ -161,6 +176,10 @@ static void carParked ( int signal )
 		pid_t p;
 		int status;
 		p = waitpid( -1, &status, WNOHANG );
+		
+		// Removes the pid from the "to be deleted" pid map
+		childrenPid.erase(p);
+		
 		if ( p > 0 &&  WIFEXITED( status ) )
 		{
 			savePark( WEXITSTATUS( status ) );
@@ -227,6 +246,8 @@ void EntranceDoor ( TypeBarriere type )
 //
 {
 	init( type );
+	
+	pid_t childPid;
 
 	for (;;)
 	{
@@ -243,17 +264,23 @@ void EntranceDoor ( TypeBarriere type )
 				userTypeCh( command.userType ) );
 		Afficher( MESSAGE, msg );
 
-		// TODO put <pid_t, TypeUsager> into map
+		// put <pid_t, TypeUsager> into map -> OK childrenPid map
+		
+		
 		struct WaitingCar * pWaitingCar =
 				&( shmParkingLot->waitingCars[AUCUNE + doorType] );
 		// TODO following line BAD
 		pWaitingCar->userType = command.userType;
 
 		// Parking a car
-		if ( -1 == GarerVoiture( type ) )
+		if ( -1 == ( childPid = GarerVoiture( type ) ) )
 		{
 			perror( "Error while trying to park a car" );
 			destroy( );
+		}
+		else
+		{
+			childrenPid.insert(std::pair<pid_t, TypeUsager>(childPid, type));
 		}
 	}
 
