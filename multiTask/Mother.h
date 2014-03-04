@@ -17,6 +17,8 @@
 // Creates:
 // * Shared memory
 // * Mutex for the above shared memory
+// * Mailbox for communitcating Keyboard commands
+//
 // * <Keyboard> task
 // * <Hour> task
 // * <EntranceDoor> tasks (NB_BARRIERES_ENTREE instances)

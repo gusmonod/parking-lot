@@ -18,6 +18,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/sem.h>
+#include <sys/msg.h>
 
 //------------------------------------------------------- Personal include
 #include "Heure.h"
@@ -36,6 +37,8 @@
 //------------------------------------------------------- Static variables
 static int shmId;
 static int shmMutexId;
+
+static int mbCommandId;
 
 //------------------------------------------------------ Private functions
 static void init    ( );
@@ -58,7 +61,7 @@ static void init ( )
 
 	struct ParkingLot * shmParkingLot;
 
-	// Initialisation of the shared memory
+	// Initialization of the shared memory
 	shmParkingLot = ( struct ParkingLot * ) shmat( shmId, NULL, 0 );
 
 	shmParkingLot->fullSpots = 0;
@@ -68,20 +71,25 @@ static void init ( )
 	{
 		( shmParkingLot->waitingCars[i] ).userType = AUCUN;
 	}
+
 	for ( unsigned int i = 0; i < NB_PLACES; ++i )
 	{
 		( shmParkingLot->parkedCars[i] ).userType = AUCUN;
-	}	
+	}
 
 	// Initialization done, detaching memory
 	shmdt( shmParkingLot );
 	shmParkingLot = NULL;
 
 	// Creating the shared memory mutex
-	shmMutexId = semget( ftok( PROGRAM_NAME, FTOK_CHAR), MUTEX_NB,
+	shmMutexId = semget( ftok( PROGRAM_NAME, FTOK_CHAR ), MUTEX_NB,
 					IPC_CREAT | RIGHTS );
 	// The shared memory is accessible, so the mutex is set to MUTEX_OK
 	semctl( shmMutexId, 0, SETVAL, MUTEX_OK );
+
+	// Creating the mailbox for the commands
+	mbCommandId = msgget( ftok( PROGRAM_NAME, FTOK_CHAR ),
+						  IPC_CREAT | RIGHTS );
 }
 
 static void destroy ( )
@@ -93,6 +101,9 @@ static void destroy ( )
 
 	// Deletes the shared memory mutex
 	semctl( shmMutexId, 0, IPC_RMID, 0 );
+
+	// Deletes the command mailbox
+	msgctl( mbCommandId, IPC_RMID, NULL );
 
 	// Terminates the app
 	TerminerApplication();

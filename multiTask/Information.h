@@ -62,7 +62,7 @@ struct ParkingLot
 };
 
 
-extern int  const SHM_SIZE; // sizeof(struct ParkingLot)
+extern int  const SHM_SIZE; // sizeof( struct ParkingLot )
 
 extern struct sembuf const MUTEX_ACCESS; // Mutex for the shared memory
 extern struct sembuf const MUTEX_FREE;
@@ -70,6 +70,22 @@ extern int  const MUTEX_NB;
 extern int  const MUTEX_OK;
 extern int  const MUTEX_KO;
 
+struct EnterCommand
+// Sent from keyboard to the appropriate door
+{
+	long doorType; // Should always be an entrance door
+	enum TypeUsager userType; // Should neber be AUCUN
+};
+
+struct ExitCommand
+// Sent from keyboard to the appropriate door
+{
+	long doorType; // Should always be an exit door
+	unsigned int position; // Position in the parking lot
+};
+
+extern int  const ENTER_CMD_SIZE; // sizeof( enum TypeUsager )
+extern int  const EXIT_CMD_SIZE; // sizeof( unsigned int )
 
 //------------------------------------------------------------------ Types
 

@@ -34,6 +34,9 @@ int  const MUTEX_NB = 1;
 int  const MUTEX_OK = 1;
 int  const MUTEX_KO = 0;
 
+int  const ENTER_CMD_SIZE = sizeof( enum TypeUsager );
+int  const EXIT_CMD_SIZE = sizeof( unsigned int );
+
 //------------------------------------------------------------------ Types
 
 //------------------------------------------------------- Static variables

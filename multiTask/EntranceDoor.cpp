@@ -11,16 +11,18 @@
 
 /////////////////////////////////////////////////////////////////  INCLUDE
 //--------------------------------------------------------- System include
-#include <cstdio>
-#include <unistd.h>
-#include <signal.h>
-#include <errno.h>
+#include <cstdio> // for sprintf
 
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/sem.h>
+#include <unistd.h> // for exit
+#include <signal.h> // for sigaction
+#include <errno.h>  // for EINTR
 
-#include <sys/wait.h>
+#include <sys/ipc.h> // for all IPCS
+#include <sys/shm.h> // for shmget
+#include <sys/sem.h> // for semget
+#include <sys/msg.h> // for msgget
+
+#include <sys/wait.h> // for waitpid
 
 //------------------------------------------------------- Personal include
 #include "Heure.h"
@@ -42,6 +44,8 @@ static TypeBarriere doorType;
 //IPC
 static struct ParkingLot *shmParkingLot;
 static int shmMutexId;
+
+static int mbCommandId;
 
 static struct sembuf mutexAccess = MUTEX_ACCESS;
 static struct sembuf mutexFree  = MUTEX_FREE;
@@ -85,8 +89,8 @@ static void savePark  ( unsigned int noParkingSpot );
 
 static int init ( TypeBarriere type )
 // Algorithm:
-// Sets the signal handler, attaches the shared memory to the shm pointer,
-// and returns its id
+// Sets the signal handler, gets the command mailbox, attaches the shared
+// memory to the shmParkingLot pointer, and returns its id
 {
 	doorType = type;
 
@@ -100,6 +104,9 @@ static int init ( TypeBarriere type )
 	action.sa_handler = carParked;
 	sigaction(SIGCHLD, &action, NULL);
 
+	// Getting the command mailbox
+	mbCommandId = msgget( ftok( PROGRAM_NAME, FTOK_CHAR ), RIGHTS );
+
 	// Getting the shared memory
 	// (characteristics can be found in Information module)
 	int shmId = shmget( ftok( PROGRAM_NAME, FTOK_CHAR ), SHM_SIZE, RIGHTS );
@@ -110,9 +117,6 @@ static int init ( TypeBarriere type )
 	// Getting the shared memory mutex
 	shmMutexId = semget( ftok( PROGRAM_NAME, FTOK_CHAR), MUTEX_NB, RIGHTS);
 
-	char msg[1024];
-	sprintf(msg, "%d: Je suis en phase d'initialisation", getpid());
-	Afficher( MESSAGE, msg );
 	sleep( 3 );
 
 	return shmId;
@@ -142,7 +146,7 @@ static void endTask ( int signal )
 	}
 } //----- End of endTask
 
-static void carParked( int signal )
+static void carParked ( int signal )
 // Algorithm:
 //
 {
@@ -185,6 +189,7 @@ static void savePark ( unsigned int noParkingSpot )
 
 	char state[NB_CHAR_STATE + 1];
 
+	// TODO Get waiting car from map
 	struct WaitingCar * pWaitingCar =
 			&( shmParkingLot->waitingCars[AUCUNE + doorType] );
 
@@ -205,7 +210,7 @@ static void savePark ( unsigned int noParkingSpot )
 			 pParkedCar->carNumber, ( int ) pParkedCar->parkedSince );
 
 	Afficher( ( TypeZone )( ETAT_P1 + noParkingSpot - 1 ), state );
-} //----- End of saveParked
+} //----- End of savePark
 
 //////////////////////////////////////////////////////////////////  PUBLIC
 //------------------------------------------------------- Public functions
@@ -221,18 +226,40 @@ void EntranceDoor ( TypeBarriere type )
 {
 	init( type );
 
-	// Parking a car
-	if ( -1 == GarerVoiture( type ) )
-	{
-		perror( "Error while trying to park a car" );
-		destroy( );
-	}
-
 	for (;;)
 	{
-		sleep( 5 );
+		struct EnterCommand command;
+		int status;
+		status = msgrcv( mbCommandId, &command, ENTER_CMD_SIZE, type , 0 );
+		if ( -1 == status && EINTR == errno )
+		{
+			continue; // starts waiting again without parking anyone
+		}
+
+		char msg[1024];
+		sprintf(msg, "EntranceDoor: je dois faire rentrer un %c",
+				userTypeCh( command.userType ) );
+		Afficher( MESSAGE, msg );
+		sleep( 3 );
+		sprintf(msg, "                                        " );
+		Afficher( MESSAGE, msg );
+
+
+		// TODO put <pid_t, TypeUsager> into map
+		struct WaitingCar * pWaitingCar =
+				&( shmParkingLot->waitingCars[AUCUNE + doorType] );
+		// TODO following line BAD
+		pWaitingCar->userType = command.userType;
+
+		// Parking a car
+		if ( -1 == GarerVoiture( type ) )
+		{
+			perror( "Error while trying to park a car" );
+			destroy( );
+		}
 	}
-	destroy( );
+
+		destroy( );
 } //----- End of EntranceDoor
 
 

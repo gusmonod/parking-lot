@@ -11,14 +11,17 @@
 
 /////////////////////////////////////////////////////////////////  INCLUDE
 //--------------------------------------------------------- System include
-#include <cstdio>
 #include <unistd.h>
+
+#include <sys/ipc.h>
+#include <sys/msg.h>
 
 //------------------------------------------------------- Personal include
 #include "Heure.h"
 #include "Outils.h"
 #include "Menu.h"
 
+#include "Information.h"
 #include "Keyboard.h"
 
 /////////////////////////////////////////////////////////////////  PRIVATE
@@ -27,6 +30,7 @@
 //------------------------------------------------------------------ Types
 
 //------------------------------------------------------- Static variables
+static int mbCommandId;
 
 //------------------------------------------------------ Private functions
 //static type name ( parameter list )
@@ -51,6 +55,9 @@ void Keyboard ( )
 // Algorithm:
 // Infinitely asks the Menu for input
 {
+	// Getting the mailbox for the commands
+	mbCommandId = msgget( ftok( PROGRAM_NAME, FTOK_CHAR ), RIGHTS );
+
 	for(;;)
 	{
 		Menu();
@@ -64,17 +71,43 @@ void Commande ( char code, unsigned int valeur )
 	switch(code)
 	{
 		case 'Q' :
-			exit(0);
+			_exit(0);
 		break;
 		case 'P' :
-			
-		break;
+		{
+			// The command to send:
+			struct EnterCommand command;
+
+			command.doorType = 1 == valeur ?
+					PROF_BLAISE_PASCAL : ENTREE_GASTON_BERGER;
+			command.userType = PROF;
+
+			msgsnd( mbCommandId, &command, ENTER_CMD_SIZE, IPC_NOWAIT );
+			break;
+		}
 		case 'A' :
-			
-		break;
+		{
+			// The command to send:
+			struct EnterCommand command;
+
+			command.doorType = 1 == valeur ?
+					PROF_BLAISE_PASCAL : ENTREE_GASTON_BERGER;
+			command.userType = AUTRE;
+
+			msgsnd( mbCommandId, &command, ENTER_CMD_SIZE, IPC_NOWAIT );
+			break;
+		}
 		case 'S' :
-			
-		break;
+		{
+			// The command to send:
+			struct ExitCommand command;
+
+			command.doorType = SORTIE_GASTON_BERGER;
+			command.position = valeur;
+
+			msgsnd( mbCommandId, &command, EXIT_CMD_SIZE, IPC_NOWAIT );
+			break;
+		}
 	}
 } //----- End of Commande
 
