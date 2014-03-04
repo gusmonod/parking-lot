@@ -17,6 +17,8 @@
 #include <signal.h> // for sigaction
 #include <errno.h>  // for EINTR
 
+#include <set> // for children processes management
+
 #include <sys/ipc.h> // for all IPCS
 #include <sys/shm.h> // for shmget
 #include <sys/sem.h> // for semget
@@ -51,6 +53,8 @@ static struct sembuf mutexAccess = MUTEX_ACCESS;
 static struct sembuf mutexFree  = MUTEX_FREE;
 
 static int waitSemSetId;
+
+static std::set<pid_t> childrenPid;
 
 //------------------------------------------------------ Private functions
 
@@ -144,6 +148,17 @@ static void endTask ( int signal )
 {
 	if ( SIGUSR2 == signal )
 	{
+		std::set<pid_t>::iterator it;
+	
+		for(it = childrenPid.begin(); it != childrenPid.end(); ++it)
+		{
+			//Killing every child pid
+			kill( *it, SIGUSR2 );
+			waitpid( *it, NULL, 0);
+		}
+		
+		childrenPid.clear();
+	
 		destroy( );
 	}
 } //----- End of endTask
@@ -157,6 +172,10 @@ static void carExited ( int signal )
 		pid_t p;
 		int status;
 		p = waitpid( -1, &status, WNOHANG );
+		
+		// Removes the pid from the "To be killed" pid set (childrenPid)
+		childrenPid.erase(p);
+		
 		if ( p > 0 &&  WIFEXITED( status ) )
 		{
 			saveExit( WEXITSTATUS( status ) );
@@ -228,6 +247,8 @@ void ExitDoor ( )
 // Algorithm:
 //
 {
+	pid_t childPid;
+
 	init( );
 
 	for (;;)
@@ -247,10 +268,14 @@ void ExitDoor ( )
 		Afficher( MESSAGE, msg );
 
 		// Making a car exit
-		if ( -1 == SortirVoiture( command.position ) )
+		if ( -1 == (childPid = SortirVoiture( command.position )) )
 		{
 			perror( "Error while trying to exit a car" );
 			destroy( );
+		}
+		else
+		{
+			childrenPid.insert(childPid);
 		}
 	}
 
