@@ -91,6 +91,15 @@ extern int  const EXIT_CMD_SIZE; // sizeof( unsigned int )
 
 //////////////////////////////////////////////////////////////////  PUBLIC
 //------------------------------------------------------- Public functions
+
+struct sembuf SemP ( short unsigned int noSem );
+// How to use:
+//     Returns the correct sembuf structure for a P operation
+
+struct sembuf SemV ( short unsigned int noSem );
+// How to use:
+//     Returns the correct sembuf structure for a V operation
+
 // type Name ( parameter list );
 // How to use:
 //

@@ -28,6 +28,7 @@
 #include "Mother.h"
 #include "Keyboard.h"
 #include "EntranceDoor.h"
+#include "ExitDoor.h"
 
 /////////////////////////////////////////////////////////////////  PRIVATE
 //-------------------------------------------------------------- Constants
@@ -39,6 +40,8 @@ static int shmId;
 static int shmMutexId;
 
 static int mbCommandId;
+
+static int waitSemSetId;
 
 //------------------------------------------------------ Private functions
 static void init    ( );
@@ -90,23 +93,42 @@ static void init ( )
 	// Creating the mailbox for the commands
 	mbCommandId = msgget( ftok( PROGRAM_NAME, FTOK_CHAR ),
 						  IPC_CREAT | RIGHTS );
+
+	// Creating the semaphore set for the entrance doors to wait
+	waitSemSetId = semget( ftok( PROGRAM_NAME, FTOK_CHAR + 1 ),
+					NB_BARRIERES_ENTREE, IPC_CREAT | RIGHTS );
+
+	for ( unsigned int i = 0; i < NB_BARRIERES_ENTREE; ++i )
+	// For all semaphores in the set:
+	{
+		// By default, the entrance door should not let anyone in
+		semctl( waitSemSetId, i, SETVAL, MUTEX_KO );
+	}
 }
 
 static void destroy ( )
 // Algorithm:
 // Deletes the IPC objects used to communicate and destroys the app.
 {
-	// Deletes the shared memory
-	shmctl( shmId, 0, IPC_RMID );
+	// Deletes all of the waiting semaphores
+	for ( unsigned int i = 0; i < NB_BARRIERES_ENTREE; ++i )
+	{
+		semctl( waitSemSetId, i, IPC_RMID, 0 );
+	}
+
+	// Deletes the command mailbox
+	msgctl( mbCommandId, IPC_RMID, 0 );
 
 	// Deletes the shared memory mutex
 	semctl( shmMutexId, 0, IPC_RMID, 0 );
 
-	// Deletes the command mailbox
-	msgctl( mbCommandId, IPC_RMID, NULL );
+	// Deletes the shared memory
+	shmctl( shmId, 0, IPC_RMID );
 
 	// Terminates the app
 	TerminerApplication();
+
+	_exit( EXIT_SUCCESS );
 }
 
 //static type name ( parameter list )
@@ -132,43 +154,57 @@ int main ( )
 	init( );
 
 	// The pid of the multiple tasks
-	pid_t noKeyboard;
-	pid_t noHour = ActiverHeure();
-	pid_t noEntranceDoors[NB_BARRIERES_ENTREE];
+	pid_t nbHour = ActiverHeure();
+	pid_t nbExitDoor;
+	pid_t nbEntranceDoors[NB_BARRIERES_ENTREE];
+	pid_t nbKeyboard;
 
-	for (unsigned int i = 0; i < NB_BARRIERES_ENTREE ; ++i)
+	if ( 0 == ( nbExitDoor = fork( ) ) )
 	{
-		noEntranceDoors[i] = fork();
-		if (0 == noEntranceDoors[i]) // Child process
-		{
-			// Giving the correct type of door as argument
-			EntranceDoor((TypeBarriere)(i+ 1));
-		}
-	}
-
-	if( ( noKeyboard = fork ( ) ) == 0 )
-	{
-		Keyboard( );
+		ExitDoor( );
+		_exit( EXIT_FAILURE );
 	}
 	else
 	{
-		// Waiting for end synchronization from Keyboard
-		waitpid( noKeyboard, NULL, 0 );
-
-		// Killing the NB_BARRIERES_ENTREE entrance doors
 		for (unsigned int i = 0; i < NB_BARRIERES_ENTREE ; ++i)
 		{
-			kill( noEntranceDoors[i], SIGUSR2 );
-			waitpid( noEntranceDoors[i], NULL, 0 );
+			nbEntranceDoors[i] = fork();
+			if (0 == nbEntranceDoors[i]) // Child process
+			{
+				// Giving the correct type of door as argument
+				EntranceDoor((TypeBarriere)(i+ 1));
+				_exit( EXIT_FAILURE );
+			}
 		}
+		if ( 0 == ( nbKeyboard = fork( ) ) )
+		{
+			Keyboard( );
+			_exit( EXIT_FAILURE );
+		}
+		else
+		{
+			// Waiting for end synchronization from Keyboard
+			waitpid( nbKeyboard, NULL, 0 );
 
-		// Killing the Hour task
-		kill( noHour, SIGUSR2 );
-		waitpid( noHour, NULL, 0 );
+			// Killing the exit door
+			kill( nbExitDoor, SIGUSR2 );
+			waitpid( nbExitDoor, NULL, 0 );
 
-		// And finally, terminating the application
-		destroy( );
+			// Killing the NB_BARRIERES_ENTREE entrance doors
+			for (unsigned int i = 0; i < NB_BARRIERES_ENTREE ; ++i)
+			{
+				kill( nbEntranceDoors[i], SIGUSR2 );
+				waitpid( nbEntranceDoors[i], NULL, 0 );
+			}
+
+			// Killing the Hour task
+			kill( nbHour, SIGUSR2 );
+			waitpid( nbHour, NULL, 0 );
+
+			// And finally, terminating the application
+			destroy( );
+		}
 	}
-	
-	return 0;
+
+	_exit( EXIT_FAILURE );
 }

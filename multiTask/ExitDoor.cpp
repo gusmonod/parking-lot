@@ -1,13 +1,13 @@
 /*************************************************************************
-                        EntranceDoor  -  description
+                          ExitDoor  -  description
                              -------------------
-    date                 : Feb. 19 2014
+    date                 : Mar. 04 2014
     copyright            : (C) 2014 Yannick Marion & Gustave Monod
     e-mail               : yannick.marion@insa-lyon.fr
                            gustave.monod@insa-lyon.fr
 *************************************************************************/
 
-//---- Realization of the <EntranceDoor> task (file EntranceDoor.cpp) ----
+//---- Realization of the <ExitDoor> task (file ExitDoor.cpp) ----
 
 /////////////////////////////////////////////////////////////////  INCLUDE
 //--------------------------------------------------------- System include
@@ -32,7 +32,7 @@
 #include "Information.h"
 #include "Keyboard.h"
 
-#include "EntranceDoor.h"
+#include "ExitDoor.h"
 
 /////////////////////////////////////////////////////////////////  PRIVATE
 //-------------------------------------------------------------- Constants
@@ -40,8 +40,6 @@
 //------------------------------------------------------------------ Types
 
 //------------------------------------------------------- Static variables
-
-static TypeBarriere doorType;
 
 //IPC
 static struct ParkingLot *shmParkingLot;
@@ -57,25 +55,25 @@ static int waitSemSetId;
 //------------------------------------------------------ Private functions
 
 //------------------------------------------------------------- Init phase
-static int  init      ( TypeBarriere type );
+static int  init      ( );
 // How to use:
-// Initialization process of the <EntranceDoor> task
+// Initialization process of the <ExitDoor> task
 
 //---------------------------------------------------------- Destroy phase
 static void destroy   ( );
 // How to use:
-// Destruction phase of the <EntranceDoor> task
+// Destruction phase of the <ExitDoor> task
 
 static void endTask   ( int signal );
 // How to use:
 // Handles the SIGUSR2 signal, by destroying the task and its children
 
 //------------------------------------------------------------ Motor phase
-static void carParked ( int signal );
+static void carExited ( int signal );
 // How to use:
 // Handles the SIGCHLD signal, received when a car is parked
 
-static void savePark  ( unsigned int noParkingSpot );
+static void saveExit  ( unsigned int noParkingSpot );
 // How to use:
 // Saves a car into the parking
 //   · Safe (mutex) write in the shared memory of the newly parked car
@@ -91,13 +89,11 @@ static void savePark  ( unsigned int noParkingSpot );
 //{
 //} //----- End of name
 
-static int init ( TypeBarriere type )
+static int init ( )
 // Algorithm:
 // Sets the signal handler, gets the command mailbox, attaches the shared
 // memory to the shmParkingLot pointer, and returns its id
 {
-	doorType = type;
-
 	struct sigaction action;
 	sigemptyset(&action.sa_mask);
 	action.sa_flags = 0;
@@ -105,7 +101,7 @@ static int init ( TypeBarriere type )
 	action.sa_handler = endTask;
 	sigaction(SIGUSR2, &action, NULL);
 
-	action.sa_handler = carParked;
+	action.sa_handler = carExited;
 	sigaction(SIGCHLD, &action, NULL);
 
 	// Getting the command mailbox
@@ -152,7 +148,7 @@ static void endTask ( int signal )
 	}
 } //----- End of endTask
 
-static void carParked ( int signal )
+static void carExited ( int signal )
 // Algorithm:
 //
 {
@@ -163,55 +159,61 @@ static void carParked ( int signal )
 		p = waitpid( -1, &status, WNOHANG );
 		if ( p > 0 &&  WIFEXITED( status ) )
 		{
-			savePark( WEXITSTATUS( status ) );
+			saveExit( WEXITSTATUS( status ) );
 		}
 	}
 }
 
-static char userTypeCh ( TypeUsager userType )
-{
-	switch ( userType )
-	{
-		case PROF:
-			return 'P';
-		case AUTRE:
-			return 'A';
-		case AUCUN:
-			return ' ';
-	}
-	return -1;
-}
-
-static void savePark ( unsigned int noParkingSpot )
+static void saveExit ( unsigned int noParkingSpot )
 // Contract:
 //
 // Algorithm:
 //
 {
 	char msg[1024];
-	sprintf(msg, "%d: Une voiture est garee au %d       ",
+	sprintf(msg, "%d: Une voiture s'est en allee du %d  ",
 			getpid(), noParkingSpot );
 	Afficher( MESSAGE, msg );
 
-	// TODO Get waiting car from map
-	struct WaitingCar * pWaitingCar =
-			&( shmParkingLot->waitingCars[AUCUNE + doorType] );
-
-	struct ParkedCar * pParkedCar =
+	struct ParkedCar * pExitedCar =
 			&( shmParkingLot->parkedCars[noParkingSpot - 1] );
 
 	/* BEGIN shared memory exclusion */
 	semop( shmMutexId, &mutexAccess, 1 );
-		pParkedCar->userType = pWaitingCar->userType;
-		pParkedCar->carNumber = ( shmParkingLot->nextCarNo )++;
-		pParkedCar->parkedSince = time( NULL );
-
-		pWaitingCar->userType = AUCUN;
+		pExitedCar->userType = AUCUN;
 	semop( shmMutexId, &mutexFree, 1 );
 	/* END   shared memory exclusion */
 
-	AfficherPlace( noParkingSpot, pParkedCar->userType,
-				   pParkedCar->carNumber, pParkedCar->parkedSince );
+	int carChosen = -1;
+	struct WaitingCar * pCars = shmParkingLot->waitingCars;
+	for ( unsigned int i = 0; i < NB_BARRIERES_ENTREE; ++i )
+	{
+		if ( AUCUN != ( pCars[i] ).userType )
+		{
+			if (// No car wants to enter yet:
+				-1 == carChosen ||
+
+				// PROF is prioritary over AUTRE:
+				( AUTRE == ( pCars[carChosen] ).userType &&
+				  PROF ==  ( pCars[i] ).userType ) ||
+
+				// Same user type means "first arrived, first served":
+				( ( pCars[i] )        .arrivalTime
+				< ( pCars[carChosen] ).arrivalTime ) )
+			{
+				carChosen = i;
+			}
+		}
+	}
+
+	if ( -1 != carChosen )
+	{
+		// Allow one entrance door to continue
+		struct sembuf V = SemV( carChosen );
+		semop( waitSemSetId, &V, 1 );
+	}
+
+	Effacer( ( TypeZone )( ETAT_P1 + noParkingSpot - 1 ) );
 } //----- End of savePark
 
 //////////////////////////////////////////////////////////////////  PUBLIC
@@ -222,41 +224,36 @@ static void savePark ( unsigned int noParkingSpot )
 //{
 //} //----- End of Name
 
-void EntranceDoor ( TypeBarriere type )
+void ExitDoor ( )
 // Algorithm:
 //
 {
-	init( type );
+	init( );
 
 	for (;;)
 	{
-		struct EnterCommand command;
+		struct ExitCommand command;
 		int status;
-		status = msgrcv( mbCommandId, &command, ENTER_CMD_SIZE, type , 0 );
+		status = msgrcv( mbCommandId, &command,
+						 EXIT_CMD_SIZE, SORTIE_GASTON_BERGER, 0 );
 		if ( -1 == status && EINTR == errno )
 		{
-			continue; // starts waiting again without parking anyone
+			continue; // starts waiting again without making anyone leave
 		}
 
 		char msg[1024];
-		sprintf(msg, "EntranceDoor: je dois faire rentrer un %c",
-				userTypeCh( command.userType ) );
+		sprintf(msg, "ExitDoor: je dois faire sortir le %d",
+				command.position );
 		Afficher( MESSAGE, msg );
 
-		// TODO put <pid_t, TypeUsager> into map
-		struct WaitingCar * pWaitingCar =
-				&( shmParkingLot->waitingCars[AUCUNE + doorType] );
-		// TODO following line BAD
-		pWaitingCar->userType = command.userType;
-
-		// Parking a car
-		if ( -1 == GarerVoiture( type ) )
+		// Making a car exit
+		if ( -1 == SortirVoiture( command.position ) )
 		{
-			perror( "Error while trying to park a car" );
+			perror( "Error while trying to exit a car" );
 			destroy( );
 		}
 	}
 
 		destroy( );
-} //----- End of EntranceDoor
+} //----- End of ExitDoor
 

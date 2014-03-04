@@ -91,7 +91,7 @@ void Commande ( char code, unsigned int valeur )
 			struct EnterCommand command;
 
 			command.doorType = 1 == valeur ?
-					PROF_BLAISE_PASCAL : ENTREE_GASTON_BERGER;
+					AUTRE_BLAISE_PASCAL : ENTREE_GASTON_BERGER;
 			command.userType = AUTRE;
 
 			msgsnd( mbCommandId, &command, ENTER_CMD_SIZE, IPC_NOWAIT );
