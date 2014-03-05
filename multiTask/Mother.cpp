@@ -162,7 +162,8 @@ int main ( )
 	if ( 0 == ( nbExitDoor = fork( ) ) )
 	{
 		ExitDoor( );
-		_exit( EXIT_FAILURE );
+		perror( "exit" );
+//		_exit( EXIT_FAILURE );
 	}
 	else
 	{
@@ -173,13 +174,15 @@ int main ( )
 			{
 				// Giving the correct type of door as argument
 				EntranceDoor((TypeBarriere)(i+ 1));
-				_exit( EXIT_FAILURE );
+				perror( "entrance" );
+//				_exit( EXIT_FAILURE );
 			}
 		}
 		if ( 0 == ( nbKeyboard = fork( ) ) )
 		{
 			Keyboard( );
-			_exit( EXIT_FAILURE );
+			perror( "keyboard" );
+//			_exit( EXIT_FAILURE );
 		}
 		else
 		{

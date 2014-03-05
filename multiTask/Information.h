@@ -40,7 +40,6 @@ extern unsigned int NB_CHAR_STATE;
 struct WaitingCar
 {
 	TypeUsager userType;
-	TypeBarriere entranceType;
 	time_t arrivalTime;
 };
 
