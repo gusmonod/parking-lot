@@ -11,7 +11,8 @@
 
 /////////////////////////////////////////////////////////////////  INCLUDE
 //--------------------------------------------------------- System include
-#include <unistd.h> // for perror
+#include <unistd.h> // for _exit
+#include <cstdio> // for perror
 
 #include <sys/ipc.h> // for all IPCS
 #include <sys/msg.h> // for msgget
