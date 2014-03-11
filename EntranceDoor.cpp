@@ -158,6 +158,7 @@ static void endTask ( int signal )
 		{
 			//Killing every child pid
 			kill( it->first, SIGUSR2 );
+			waitpid( it->first, NULL, 0 );
 		}
 
 		destroy( );
