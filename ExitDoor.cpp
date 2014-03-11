@@ -191,9 +191,9 @@ static void saveExit ( unsigned int noParkingSpot )
 
 	/* BEGIN shared memory exclusion */
 	semop( shmMutexId, &mutexAccess, 1 );
-	pExitedCar->userType = AUCUN;
+		pExitedCar->userType = AUCUN;
 
-	--( shmParkingLot->fullSpots );
+		--( shmParkingLot->fullSpots );
 	semop( shmMutexId, &mutexFree, 1 );
 	/* END   shared memory exclusion */
 
@@ -261,7 +261,7 @@ void ExitDoor ( )
 			childrenPid.insert( childPid );
 		}
 	}
-
-	destroy( );
+	perror( "Error: exited the ExitDoor loop" );
+	_exit( EXIT_FAILURE );
 } //----- End of ExitDoor
 

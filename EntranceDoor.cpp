@@ -243,7 +243,7 @@ static void clearRequest ( )
 
 	/* BEGIN shared memory exclusion */
 	semop( shmMutexId, &mutexAccess, 1 );
-	pWaitingCar->userType = AUCUN;
+		pWaitingCar->userType = AUCUN;
 	semop( shmMutexId, &mutexFree, 1 );
 	/* END   shared memory exclusion */
 
@@ -297,13 +297,14 @@ void EntranceDoor ( TypeBarriere type )
 			status = semop( shmMutexId, &mutexAccess, 1 );
 		} while ( -1 == status && EINTR == errno );
 
-		// Parking a car
-		if ( -1 == ( childPid = GarerVoiture( type ) ) )
-		{
-			perror( "Error trying to park a car" );
-		}
+			// Parking a car
+			if ( -1 == ( childPid = GarerVoiture( type ) ) )
+			{
+				perror( "Error trying to park a car" );
+				_exit( EXIT_FAILURE );
+			}
 
-		++( shmParkingLot->fullSpots );
+			++( shmParkingLot->fullSpots );
 
 		semop( shmMutexId, &mutexFree, 1 );
 		/* END   shared memory exclusion */
@@ -313,6 +314,7 @@ void EntranceDoor ( TypeBarriere type )
 		sleep( ENTRANCE_TEMPO ); // So as to avoid entrance collision
 	}
 
-	perror( "Shouldn't reach here" );
+	perror( "Error: exited the EntranceDoor loop" );
+	_exit( EXIT_FAILURE );
 } //----- End of EntranceDoor
 

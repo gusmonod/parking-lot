@@ -61,6 +61,8 @@ void Keyboard ( )
 	{
 		Menu( );
 	}
+	perror( "Error: exited the Keyboard loop" );
+	_exit( EXIT_FAILURE );
 } //----- End of Keyboard
 
 void Commande ( char code, unsigned int valeur )
