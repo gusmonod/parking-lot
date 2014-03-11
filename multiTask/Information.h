@@ -8,7 +8,7 @@
 *************************************************************************/
 
 //------ Interface of the <Information> module (file Information.h) ------
-#if ! defined ( INFORMATION_H )
+#if !defined ( INFORMATION_H )
 #define INFORMATION_H
 
 //------------------------------------------------------------------------
@@ -30,7 +30,7 @@
 #include "Outils.h"
 
 //-------------------------------------------------------------- Constants
-extern int  const RIGHTS; // 0666
+extern int const RIGHTS; // 0666
 extern char const PROGRAM_NAME[]; // ./Parking
 extern char const FTOK_CHAR; // '3'
 
@@ -61,19 +61,19 @@ struct ParkingLot
 };
 
 
-extern int  const SHM_SIZE; // sizeof( struct ParkingLot )
+extern size_t const SHM_SIZE; // sizeof( struct ParkingLot )
 
 extern struct sembuf const MUTEX_ACCESS; // Mutex for the shared memory
 extern struct sembuf const MUTEX_FREE;
-extern int  const MUTEX_NB;
-extern int  const MUTEX_OK;
-extern int  const MUTEX_KO;
+extern int const MUTEX_NB;
+extern int const MUTEX_OK;
+extern int const MUTEX_KO;
 
 struct EnterCommand
 // Sent from keyboard to the appropriate door
 {
 	long doorType; // Should always be an entrance door
-	enum TypeUsager userType; // Should neber be AUCUN
+	enum TypeUsager userType; // Should never be AUCUN
 };
 
 struct ExitCommand
@@ -83,8 +83,8 @@ struct ExitCommand
 	unsigned int position; // Position in the parking lot
 };
 
-extern int  const ENTER_CMD_SIZE; // sizeof( enum TypeUsager )
-extern int  const EXIT_CMD_SIZE; // sizeof( unsigned int )
+extern int const ENTER_CMD_SIZE; // sizeof( enum TypeUsager )
+extern int const EXIT_CMD_SIZE; // sizeof( unsigned int )
 
 //------------------------------------------------------------------ Types
 

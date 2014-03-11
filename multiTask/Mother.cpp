@@ -60,12 +60,12 @@ static void init ( )
 	// Creating the shared memory
 	// (characteristics can be found in Information module)
 	shmId = shmget( ftok( PROGRAM_NAME, FTOK_CHAR ), SHM_SIZE,
-					IPC_CREAT | RIGHTS );
+			IPC_CREAT | RIGHTS );
 
-	struct ParkingLot * shmParkingLot;
+	struct ParkingLot *shmParkingLot;
 
 	// Initialization of the shared memory
-	shmParkingLot = ( struct ParkingLot * ) shmat( shmId, NULL, 0 );
+	shmParkingLot = (struct ParkingLot *) shmat( shmId, NULL, 0 );
 
 	shmParkingLot->fullSpots = 0;
 	shmParkingLot->nextCarNo = 1;
@@ -86,17 +86,17 @@ static void init ( )
 
 	// Creating the shared memory mutex
 	shmMutexId = semget( ftok( PROGRAM_NAME, FTOK_CHAR ), MUTEX_NB,
-					IPC_CREAT | RIGHTS );
+			IPC_CREAT | RIGHTS );
 	// The shared memory is accessible, so the mutex is set to MUTEX_OK
 	semctl( shmMutexId, 0, SETVAL, MUTEX_OK );
 
 	// Creating the mailbox for the commands
 	mbCommandId = msgget( ftok( PROGRAM_NAME, FTOK_CHAR ),
-						  IPC_CREAT | RIGHTS );
+			IPC_CREAT | RIGHTS );
 
 	// Creating the semaphore set for the entrance doors to wait
 	waitSemSetId = semget( ftok( PROGRAM_NAME, FTOK_CHAR + 1 ),
-					NB_BARRIERES_ENTREE, IPC_CREAT | RIGHTS );
+			NB_BARRIERES_ENTREE, IPC_CREAT | RIGHTS );
 
 	for ( unsigned int i = 0; i < NB_BARRIERES_ENTREE; ++i )
 	// For all semaphores in the set:
@@ -126,7 +126,7 @@ static void destroy ( )
 	shmctl( shmId, 0, IPC_RMID );
 
 	// Terminates the app
-	TerminerApplication();
+	TerminerApplication( );
 
 	_exit( EXIT_SUCCESS );
 }
@@ -154,7 +154,7 @@ int main ( )
 	init( );
 
 	// The pid of the multiple tasks
-	pid_t nbHour = ActiverHeure();
+	pid_t nbHour = ActiverHeure( );
 	pid_t nbExitDoor;
 	pid_t nbEntranceDoors[NB_BARRIERES_ENTREE];
 	pid_t nbKeyboard;
@@ -167,13 +167,13 @@ int main ( )
 	}
 	else
 	{
-		for (unsigned int i = 0; i < NB_BARRIERES_ENTREE ; ++i)
+		for ( unsigned int i = 0; i < NB_BARRIERES_ENTREE; ++i )
 		{
-			nbEntranceDoors[i] = fork();
-			if (0 == nbEntranceDoors[i]) // Child process
+			nbEntranceDoors[i] = fork( );
+			if ( 0 == nbEntranceDoors[i] ) // Child process
 			{
 				// Giving the correct type of door as argument
-				EntranceDoor((TypeBarriere)(i+ 1));
+				EntranceDoor( ( TypeBarriere )( i + 1 ) );
 				perror( "entrance" );
 //				_exit( EXIT_FAILURE );
 			}
@@ -194,7 +194,7 @@ int main ( )
 			waitpid( nbExitDoor, NULL, 0 );
 
 			// Killing the NB_BARRIERES_ENTREE entrance doors
-			for (unsigned int i = 0; i < NB_BARRIERES_ENTREE ; ++i)
+			for ( unsigned int i = 0; i < NB_BARRIERES_ENTREE; ++i )
 			{
 				kill( nbEntranceDoors[i], SIGUSR2 );
 				waitpid( nbEntranceDoors[i], NULL, 0 );

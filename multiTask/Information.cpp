@@ -37,36 +37,36 @@
 //////////////////////////////////////////////////////////////////  PUBLIC
 //------------------------------------------------------- Public constants
 
-int  const RIGHTS = 0660;
+int const RIGHTS = 0660;
 char const PROGRAM_NAME[] = "./Parking";
 char const FTOK_CHAR = '3';
 
 unsigned int NB_CHAR_STATE = 18;
 
 // Used for the shared memory:
-int  const SHM_SIZE = sizeof(struct ParkingLot);
+size_t const SHM_SIZE = sizeof( struct ParkingLot );
 
 // Mutex for the shared memory
-struct sembuf const MUTEX_ACCESS = { 0, -1, 0 };
-struct sembuf const MUTEX_FREE   = { 0,  1, 0 };
-int  const MUTEX_NB = 1;
-int  const MUTEX_OK = 1;
-int  const MUTEX_KO = 0;
+struct sembuf const MUTEX_ACCESS = {0, -1, 0};
+struct sembuf const MUTEX_FREE = {0, 1, 0};
+int const MUTEX_NB = 1;
+int const MUTEX_OK = 1;
+int const MUTEX_KO = 0;
 
 // Command message info for the mailbox:
-int  const ENTER_CMD_SIZE = sizeof( enum TypeUsager );
-int  const EXIT_CMD_SIZE = sizeof( unsigned int );
+int const ENTER_CMD_SIZE = sizeof( enum TypeUsager );
+int const EXIT_CMD_SIZE = sizeof( unsigned int );
 
 //------------------------------------------------------- Public functions
 
 struct sembuf SemP ( short unsigned int noSem )
 {
-	struct sembuf result = { noSem, -1, 0 };
+	struct sembuf result = {noSem, -1, 0};
 	return result;
 } //----- End of SemP
 
 struct sembuf SemV ( short unsigned int noSem )
 {
-	struct sembuf result = { noSem,  1, 0 };
+	struct sembuf result = {noSem, 1, 0};
 	return result;
 } //----- End of SemV

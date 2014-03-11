@@ -18,6 +18,7 @@
 #include <errno.h>  // for EINTR
 
 #include <map> // for child processes management
+
 using namespace std;
 
 #include <sys/ipc.h> // for all IPCS
@@ -25,15 +26,11 @@ using namespace std;
 #include <sys/sem.h> // for semget
 #include <sys/msg.h> // for msgget
 
-#include <sys/wait.h> // for waitpid
-
 //------------------------------------------------------- Personal include
 #include "Heure.h"
 #include "Outils.h"
-#include "Menu.h"
 
 #include "Information.h"
-#include "Keyboard.h"
 
 #include "EntranceDoor.h"
 
@@ -53,7 +50,7 @@ static int shmMutexId;
 static int mbCommandId;
 
 static struct sembuf mutexAccess = MUTEX_ACCESS;
-static struct sembuf mutexFree  = MUTEX_FREE;
+static struct sembuf mutexFree = MUTEX_FREE;
 
 static int waitSemSetId;
 
@@ -64,16 +61,16 @@ static int const TEMPO = 0;
 //------------------------------------------------------ Private functions
 
 //------------------------------------------------------------- Init phase
-static int  init      ( TypeBarriere type );
+static int init ( TypeBarriere type );
 // How to use:
 // Initialization process of the <EntranceDoor> task
 
 //---------------------------------------------------------- Destroy phase
-static void destroy   ( );
+static void destroy ( );
 // How to use:
 // Destruction phase of the <EntranceDoor> task
 
-static void endTask   ( int signal );
+static void endTask ( int signal );
 // How to use:
 // Handles the SIGUSR2 signal, by destroying the task and its children
 
@@ -82,7 +79,7 @@ static void carParked ( int signal );
 // How to use:
 // Handles the SIGCHLD signal, received when a car is parked
 
-static void savePark  ( unsigned int noParkingSpot, TypeUsager userType );
+static void savePark ( unsigned int noParkingSpot, TypeUsager userType );
 // How to use:
 // Saves a car into the parking
 //   · Safe (mutex) write in the shared memory of the newly parked car
@@ -106,14 +103,14 @@ static int init ( TypeBarriere type )
 	doorType = type;
 
 	struct sigaction action;
-	sigemptyset(&action.sa_mask);
+	sigemptyset( &action.sa_mask );
 	action.sa_flags = 0;
 
 	action.sa_handler = endTask;
-	sigaction(SIGUSR2, &action, NULL);
+	sigaction( SIGUSR2, &action, NULL );
 
 	action.sa_handler = carParked;
-	sigaction(SIGCHLD, &action, NULL);
+	sigaction( SIGCHLD, &action, NULL );
 
 	// Getting the command mailbox
 	mbCommandId = msgget( ftok( PROGRAM_NAME, FTOK_CHAR ), RIGHTS );
@@ -126,11 +123,11 @@ static int init ( TypeBarriere type )
 	shmParkingLot = (struct ParkingLot *) shmat( shmId, NULL, 0 );
 
 	// Getting the shared memory mutex
-	shmMutexId = semget( ftok( PROGRAM_NAME, FTOK_CHAR), MUTEX_NB, RIGHTS);
+	shmMutexId = semget( ftok( PROGRAM_NAME, FTOK_CHAR ), MUTEX_NB, RIGHTS );
 
 	// Getting the semaphore set for the entrance doors to wait
 	waitSemSetId = semget( ftok( PROGRAM_NAME, FTOK_CHAR + 1 ),
-					NB_BARRIERES_ENTREE, RIGHTS );
+			NB_BARRIERES_ENTREE, RIGHTS );
 
 	return shmId;
 } //----- End of init
@@ -156,15 +153,12 @@ static void endTask ( int signal )
 	if ( SIGUSR2 == signal )
 	{
 		map<pid_t, TypeUsager>::iterator it;
-		
+
 		for ( it = childrenPid.begin( ); it != childrenPid.end( ); ++it )
 		{
 			//Killing every child pid
 			kill( it->first, SIGUSR2 );
-			waitpid( it->first, NULL, 0);
 		}
-		
-		childrenPid.clear();
 
 		destroy( );
 	}
@@ -179,10 +173,10 @@ static void carParked ( int signal )
 		pid_t child;
 		int status;
 		child = waitpid( -1, &status, WNOHANG );
-		
-		if ( child > 0 &&  WIFEXITED( status ) )
+
+		if ( child > 0 && WIFEXITED( status ) )
 		{
-			savePark( WEXITSTATUS( status ), childrenPid[ child ] );
+			savePark( WEXITSTATUS( status ), childrenPid[child] );
 
 			// Removes the pid from the "to be deleted" pid map
 			childrenPid.erase( child );
@@ -196,19 +190,19 @@ static void savePark ( unsigned int noParkingSpot, TypeUsager userType )
 // Algorithm:
 //
 {
-	struct ParkedCar * pParkedCar =
+	struct ParkedCar *pParkedCar =
 			&( shmParkingLot->parkedCars[noParkingSpot - 1] );
 
 	/* BEGIN shared memory exclusion */
 	semop( shmMutexId, &mutexAccess, 1 );
-		pParkedCar->userType = userType; // parameter
-		pParkedCar->carNumber = ( shmParkingLot->nextCarNo )++;
-		pParkedCar->parkedSince = time( NULL );
+	pParkedCar->userType = userType; // parameter
+	pParkedCar->carNumber = ( shmParkingLot->nextCarNo )++;
+	pParkedCar->parkedSince = time( NULL );
 	semop( shmMutexId, &mutexFree, 1 );
 	/* END   shared memory exclusion */
 
 	AfficherPlace( noParkingSpot, pParkedCar->userType,
-				   pParkedCar->carNumber, pParkedCar->parkedSince );
+			pParkedCar->carNumber, pParkedCar->parkedSince );
 } //----- End of savePark
 
 static int waitForEmptySpot ( )
@@ -220,13 +214,13 @@ static int waitForEmptySpot ( )
 
 static void request ( TypeUsager userType, time_t timeOfRequest )
 {
-	struct WaitingCar * pWaitingCar =
+	struct WaitingCar *pWaitingCar =
 			&( shmParkingLot->waitingCars[doorType - 1] );
 
 	/* BEGIN shared memory exclusion */
 	semop( shmMutexId, &mutexAccess, 1 );
-		pWaitingCar->userType = userType;
-		pWaitingCar->arrivalTime = timeOfRequest;
+	pWaitingCar->userType = userType;
+	pWaitingCar->arrivalTime = timeOfRequest;
 	semop( shmMutexId, &mutexFree, 1 );
 	/* END   shared memory exclusion */
 
@@ -235,12 +229,12 @@ static void request ( TypeUsager userType, time_t timeOfRequest )
 
 static void clearRequest ( )
 {
-	struct WaitingCar * pWaitingCar =
+	struct WaitingCar *pWaitingCar =
 			&( shmParkingLot->waitingCars[doorType - 1] );
 
 	/* BEGIN shared memory exclusion */
 	semop( shmMutexId, &mutexAccess, 1 );
-		pWaitingCar->userType = AUCUN;
+	pWaitingCar->userType = AUCUN;
 	semop( shmMutexId, &mutexFree, 1 );
 	/* END   shared memory exclusion */
 
@@ -261,7 +255,7 @@ void EntranceDoor ( TypeBarriere type )
 {
 	init( type );
 
-	for (;;)
+	for ( ; ; )
 	{
 		pid_t childPid;
 		struct EnterCommand command;
@@ -270,7 +264,7 @@ void EntranceDoor ( TypeBarriere type )
 		do
 		{
 			status = msgrcv( mbCommandId, &command, ENTER_CMD_SIZE,
-								 doorType, 0 );
+					doorType, 0 );
 		} while ( -1 == status && EINTR == errno );
 
 		DessinerVoitureBarriere( doorType, command.userType );
@@ -294,12 +288,12 @@ void EntranceDoor ( TypeBarriere type )
 			status = semop( shmMutexId, &mutexAccess, 1 );
 		} while ( -1 == status && EINTR == errno );
 
-			++( shmParkingLot->fullSpots );
-			// Parking a car
-			if ( -1 == ( childPid = GarerVoiture( type ) ) )
-			{
-				perror( "Error trying to park a car" );
-			}
+		++( shmParkingLot->fullSpots );
+		// Parking a car
+		if ( -1 == ( childPid = GarerVoiture( type ) ) )
+		{
+			perror( "Error trying to park a car" );
+		}
 
 		semop( shmMutexId, &mutexFree, 1 );
 		/* END   shared memory exclusion */

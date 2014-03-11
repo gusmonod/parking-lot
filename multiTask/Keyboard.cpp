@@ -19,7 +19,6 @@
 //------------------------------------------------------- Personal include
 #include "Heure.h"
 #include "Outils.h"
-#include "Menu.h"
 
 #include "Information.h"
 #include "Keyboard.h"
@@ -58,9 +57,9 @@ void Keyboard ( )
 	// Getting the mailbox for the commands
 	mbCommandId = msgget( ftok( PROGRAM_NAME, FTOK_CHAR ), RIGHTS );
 
-	for(;;)
+	for ( ; ; )
 	{
-		Menu();
+		Menu( );
 	}
 } //----- End of Keyboard
 
@@ -68,11 +67,11 @@ void Commande ( char code, unsigned int valeur )
 // Algorithm:
 // Checks the code and does the appropiate action
 {
-	switch(code)
+	switch ( code )
 	{
 		case 'Q' :
-			_exit(0);
-		break;
+			_exit( 0 );
+			break;
 		case 'P' :
 		{
 			// The command to send:

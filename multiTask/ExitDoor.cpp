@@ -24,15 +24,11 @@
 #include <sys/sem.h> // for semget
 #include <sys/msg.h> // for msgget
 
-#include <sys/wait.h> // for waitpid
-
 //------------------------------------------------------- Personal include
 #include "Heure.h"
 #include "Outils.h"
-#include "Menu.h"
 
 #include "Information.h"
-#include "Keyboard.h"
 
 #include "ExitDoor.h"
 
@@ -50,7 +46,7 @@ static int shmMutexId;
 static int mbCommandId;
 
 static struct sembuf mutexAccess = MUTEX_ACCESS;
-static struct sembuf mutexFree  = MUTEX_FREE;
+static struct sembuf mutexFree = MUTEX_FREE;
 
 static int waitSemSetId;
 
@@ -59,7 +55,7 @@ static std::set<pid_t> childrenPid;
 //------------------------------------------------------ Private functions
 
 //------------------------------------------------------------- Init phase
-static int  init      ( );
+static int init       ( );
 // How to use:
 // Initialization process of the <ExitDoor> task
 
@@ -100,14 +96,14 @@ static int init ( )
 // memory to the shmParkingLot pointer, and returns its id
 {
 	struct sigaction action;
-	sigemptyset(&action.sa_mask);
+	sigemptyset( &action.sa_mask );
 	action.sa_flags = 0;
 
 	action.sa_handler = endTask;
-	sigaction(SIGUSR2, &action, NULL);
+	sigaction( SIGUSR2, &action, NULL );
 
 	action.sa_handler = carExited;
-	sigaction(SIGCHLD, &action, NULL);
+	sigaction( SIGCHLD, &action, NULL );
 
 	// Getting the command mailbox
 	mbCommandId = msgget( ftok( PROGRAM_NAME, FTOK_CHAR ), RIGHTS );
@@ -120,11 +116,11 @@ static int init ( )
 	shmParkingLot = (struct ParkingLot *) shmat( shmId, NULL, 0 );
 
 	// Getting the shared memory mutex
-	shmMutexId = semget( ftok( PROGRAM_NAME, FTOK_CHAR), MUTEX_NB, RIGHTS);
+	shmMutexId = semget( ftok( PROGRAM_NAME, FTOK_CHAR ), MUTEX_NB, RIGHTS );
 
 	// Getting the semaphore set for the entrance doors to wait
 	waitSemSetId = semget( ftok( PROGRAM_NAME, FTOK_CHAR + 1 ),
-					NB_BARRIERES_ENTREE, RIGHTS );
+			NB_BARRIERES_ENTREE, RIGHTS );
 
 	return shmId;
 } //----- End of init
@@ -150,16 +146,16 @@ static void endTask ( int signal )
 	if ( SIGUSR2 == signal )
 	{
 		std::set<pid_t>::iterator it;
-	
-		for(it = childrenPid.begin(); it != childrenPid.end(); ++it)
+
+		for ( it = childrenPid.begin( ); it != childrenPid.end( ); ++it )
 		{
 			//Killing every child pid
 			kill( *it, SIGUSR2 );
-			waitpid( *it, NULL, 0);
+			waitpid( *it, NULL, 0 );
 		}
-		
-		childrenPid.clear();
-	
+
+		childrenPid.clear( );
+
 		destroy( );
 	}
 } //----- End of endTask
@@ -173,11 +169,11 @@ static void carExited ( int signal )
 		pid_t p;
 		int status;
 		p = waitpid( -1, &status, WNOHANG );
-		
+
 		// Removes the pid from the "To be killed" pid set (childrenPid)
-		childrenPid.erase(p);
-		
-		if ( p > 0 &&  WIFEXITED( status ) )
+		childrenPid.erase( p );
+
+		if ( p > 0 && WIFEXITED( status ) )
 		{
 			saveExit( WEXITSTATUS( status ) );
 		}
@@ -190,22 +186,22 @@ static void saveExit ( unsigned int noParkingSpot )
 // Algorithm:
 //
 {
-	struct ParkedCar * pExitedCar =
+	struct ParkedCar *pExitedCar =
 			&( shmParkingLot->parkedCars[noParkingSpot - 1] );
 
 	AfficherSortie( pExitedCar->userType, pExitedCar->carNumber,
-					pExitedCar->parkedSince, time( NULL ) );
+			pExitedCar->parkedSince, time( NULL ) );
 
 	/* BEGIN shared memory exclusion */
 	semop( shmMutexId, &mutexAccess, 1 );
-		pExitedCar->userType = AUCUN;
+	pExitedCar->userType = AUCUN;
 
-		--( shmParkingLot->fullSpots );
+	--( shmParkingLot->fullSpots );
 	semop( shmMutexId, &mutexFree, 1 );
 	/* END   shared memory exclusion */
 
 	int carChosen = -1;
-	struct WaitingCar * pCars = shmParkingLot->waitingCars;
+	struct WaitingCar *pCars = shmParkingLot->waitingCars;
 	for ( unsigned int i = 0; i < NB_BARRIERES_ENTREE; ++i )
 	{
 		if ( AUCUN != ( pCars[i] ).userType )
@@ -252,25 +248,25 @@ void ExitDoor ( )
 
 	init( );
 
-	for (;;)
+	for ( ; ; )
 	{
 		struct ExitCommand command;
 		int status;
 		status = msgrcv( mbCommandId, &command,
-						 EXIT_CMD_SIZE, SORTIE_GASTON_BERGER, 0 );
+				EXIT_CMD_SIZE, SORTIE_GASTON_BERGER, 0 );
 		if ( -1 == status && EINTR == errno )
 		{
 			continue; // starts waiting again without making anyone leave
 		}
 
 		// Making a car exit
-		if ( -1 == (childPid = SortirVoiture( command.position )) )
+		if ( -1 == ( childPid = SortirVoiture( command.position ) ) )
 		{
 			continue; // Does not insert the childPid
 		}
-		childrenPid.insert(childPid);
+		childrenPid.insert( childPid );
 	}
 
-		destroy( );
+	destroy( );
 } //----- End of ExitDoor
 
