@@ -56,7 +56,7 @@ static void init ( )
 // Initializes app, and creates the IPC objects used to communicate.
 {
 	// First thing to do: Initialize app
-	InitialiserApplication( VT220 );
+	InitialiserApplication( XTERM );
 
 	// Creating the shared memory
 	// (characteristics can be found in Information module)
