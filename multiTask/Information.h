@@ -22,10 +22,9 @@
 //------------------------------------------------------------------------
 
 //-------------------------------------------------------- Used interfaces
-#include <sys/types.h>
-#include <sys/sem.h>
+#include <sys/sem.h> // for struct sembuf
 
-#include <time.h>
+#include <time.h> // for time()
 
 #include "Outils.h"
 

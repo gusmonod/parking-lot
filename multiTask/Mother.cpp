@@ -11,14 +11,15 @@
 
 /////////////////////////////////////////////////////////////////  INCLUDE
 //--------------------------------------------------------- System include
-#include <cstdio>
-#include <unistd.h>
-#include <sys/wait.h>
+#include <cstdio> // for perror
 
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/sem.h>
-#include <sys/msg.h>
+#include <unistd.h> // for exit
+#include <sys/wait.h> // for sigaction
+
+#include <sys/ipc.h> // for all IPCS
+#include <sys/shm.h> // for shmget
+#include <sys/sem.h> // for semget
+#include <sys/msg.h> // for msgget
 
 //------------------------------------------------------- Personal include
 #include "Heure.h"
@@ -55,7 +56,7 @@ static void init ( )
 // Initializes app, and creates the IPC objects used to communicate.
 {
 	// First thing to do: Initialize app
-	InitialiserApplication( XTERM );
+	InitialiserApplication( VT220 );
 
 	// Creating the shared memory
 	// (characteristics can be found in Information module)
@@ -162,8 +163,8 @@ int main ( )
 	if ( 0 == ( nbExitDoor = fork( ) ) )
 	{
 		ExitDoor( );
-		perror( "exit" );
-//		_exit( EXIT_FAILURE );
+		perror( "Error while launching ExitDoor" );
+		_exit( EXIT_FAILURE );
 	}
 	else
 	{
@@ -174,15 +175,15 @@ int main ( )
 			{
 				// Giving the correct type of door as argument
 				EntranceDoor( ( TypeBarriere )( i + 1 ) );
-				perror( "entrance" );
-//				_exit( EXIT_FAILURE );
+				perror( "Error while launching EntranceDoor" );
+				_exit( EXIT_FAILURE );
 			}
 		}
 		if ( 0 == ( nbKeyboard = fork( ) ) )
 		{
 			Keyboard( );
-			perror( "keyboard" );
-//			_exit( EXIT_FAILURE );
+			perror( "Error while launching Keyboard" );
+			_exit( EXIT_FAILURE );
 		}
 		else
 		{
@@ -209,5 +210,6 @@ int main ( )
 		}
 	}
 
+	perror( "Error: bad exit at <Mother> task" );
 	_exit( EXIT_FAILURE );
 }

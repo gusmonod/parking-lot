@@ -11,7 +11,7 @@
 
 /////////////////////////////////////////////////////////////////  INCLUDE
 //--------------------------------------------------------- System include
-#include <cstdio> // for sprintf
+#include <cstdio> // for perror
 
 #include <unistd.h> // for exit
 #include <signal.h> // for sigaction
@@ -25,6 +25,8 @@ using namespace std;
 #include <sys/shm.h> // for shmget
 #include <sys/sem.h> // for semget
 #include <sys/msg.h> // for msgget
+
+#include <sys/wait.h>
 
 //------------------------------------------------------- Personal include
 #include "Heure.h"
@@ -40,6 +42,7 @@ using namespace std;
 //------------------------------------------------------------------ Types
 
 //------------------------------------------------------- Static variables
+static const unsigned int ENTRANCE_TEMPO = 1;
 
 static TypeBarriere doorType;
 
@@ -136,14 +139,11 @@ static void destroy ( )
 // Algorithm:
 // Detaches the shared memory
 {
-	// Waiting for all of the children
-	while ( -1 != waitpid( -1, NULL, 0 ) );
-
 	// Detaching the shared memory
 	shmdt( shmParkingLot );
 	shmParkingLot = NULL;
 
-	_exit( 0 );
+	_exit( EXIT_SUCCESS );
 } //----- End of destroy
 
 static void endTask ( int signal )
@@ -190,14 +190,18 @@ static void savePark ( unsigned int noParkingSpot, TypeUsager userType )
 // Algorithm:
 //
 {
+	int status;
 	struct ParkedCar *pParkedCar =
 			&( shmParkingLot->parkedCars[noParkingSpot - 1] );
 
 	/* BEGIN shared memory exclusion */
-	semop( shmMutexId, &mutexAccess, 1 );
-	pParkedCar->userType = userType; // parameter
-	pParkedCar->carNumber = ( shmParkingLot->nextCarNo )++;
-	pParkedCar->parkedSince = time( NULL );
+	do
+	{
+		status = semop( shmMutexId, &mutexAccess, 1 );
+	} while ( -1 == status && EINTR == errno );
+		pParkedCar->userType = userType; // parameter
+		pParkedCar->carNumber = ( shmParkingLot->nextCarNo )++;
+		pParkedCar->parkedSince = time( NULL );
 	semop( shmMutexId, &mutexFree, 1 );
 	/* END   shared memory exclusion */
 
@@ -214,13 +218,17 @@ static int waitForEmptySpot ( )
 
 static void request ( TypeUsager userType, time_t timeOfRequest )
 {
+	int status;
 	struct WaitingCar *pWaitingCar =
 			&( shmParkingLot->waitingCars[doorType - 1] );
 
 	/* BEGIN shared memory exclusion */
-	semop( shmMutexId, &mutexAccess, 1 );
-	pWaitingCar->userType = userType;
-	pWaitingCar->arrivalTime = timeOfRequest;
+	do
+	{
+		status = semop( shmMutexId, &mutexAccess, 1 );
+	} while ( -1 == status && EINTR == errno );
+		pWaitingCar->userType = userType;
+		pWaitingCar->arrivalTime = timeOfRequest;
 	semop( shmMutexId, &mutexFree, 1 );
 	/* END   shared memory exclusion */
 
@@ -288,19 +296,20 @@ void EntranceDoor ( TypeBarriere type )
 			status = semop( shmMutexId, &mutexAccess, 1 );
 		} while ( -1 == status && EINTR == errno );
 
-		++( shmParkingLot->fullSpots );
 		// Parking a car
 		if ( -1 == ( childPid = GarerVoiture( type ) ) )
 		{
 			perror( "Error trying to park a car" );
 		}
 
+		++( shmParkingLot->fullSpots );
+
 		semop( shmMutexId, &mutexFree, 1 );
 		/* END   shared memory exclusion */
 
 		childrenPid.insert( make_pair( childPid, command.userType ) );
 
-		sleep( 1 ); // So as to avoid entrance collision
+		sleep( ENTRANCE_TEMPO ); // So as to avoid entrance collision
 	}
 
 	perror( "Shouldn't reach here" );

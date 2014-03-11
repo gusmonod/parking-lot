@@ -11,7 +11,7 @@
 
 /////////////////////////////////////////////////////////////////  INCLUDE
 //--------------------------------------------------------- System include
-#include <cstdio> // for sprintf
+#include <cstdio> // for perror
 
 #include <unistd.h> // for exit
 #include <signal.h> // for sigaction
@@ -23,6 +23,8 @@
 #include <sys/shm.h> // for shmget
 #include <sys/sem.h> // for semget
 #include <sys/msg.h> // for msgget
+
+#include <sys/wait.h> // for waitpid
 
 //------------------------------------------------------- Personal include
 #include "Heure.h"
@@ -129,14 +131,11 @@ static void destroy ( )
 // Algorithm:
 // Detaches the shared memory
 {
-	// Waiting for all of the children
-	while ( -1 != waitpid( -1, NULL, 0 ) );
-
 	// Detaching the shared memory
 	shmdt( shmParkingLot );
 	shmParkingLot = NULL;
 
-	exit( 0 );
+	_exit( EXIT_SUCCESS );
 } //----- End of destroy
 
 static void endTask ( int signal )
@@ -153,8 +152,6 @@ static void endTask ( int signal )
 			kill( *it, SIGUSR2 );
 			waitpid( *it, NULL, 0 );
 		}
-
-		childrenPid.clear( );
 
 		destroy( );
 	}
@@ -252,19 +249,17 @@ void ExitDoor ( )
 	{
 		struct ExitCommand command;
 		int status;
-		status = msgrcv( mbCommandId, &command,
-				EXIT_CMD_SIZE, SORTIE_GASTON_BERGER, 0 );
-		if ( -1 == status && EINTR == errno )
+		do
 		{
-			continue; // starts waiting again without making anyone leave
-		}
+			status = msgrcv( mbCommandId, &command,
+					EXIT_CMD_SIZE, SORTIE_GASTON_BERGER, 0 );
+		} while ( -1 == status && EINTR == errno );
 
 		// Making a car exit
-		if ( -1 == ( childPid = SortirVoiture( command.position ) ) )
+		if ( -1 != ( childPid = SortirVoiture( command.position ) ) )
 		{
-			continue; // Does not insert the childPid
+			childrenPid.insert( childPid );
 		}
-		childrenPid.insert( childPid );
 	}
 
 	destroy( );

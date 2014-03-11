@@ -11,14 +11,14 @@
 
 /////////////////////////////////////////////////////////////////  INCLUDE
 //--------------------------------------------------------- System include
-#include <unistd.h>
+#include <unistd.h> // for perror
 
-#include <sys/ipc.h>
-#include <sys/msg.h>
+#include <sys/ipc.h> // for all IPCS
+#include <sys/msg.h> // for msgget
 
 //------------------------------------------------------- Personal include
-#include "Heure.h"
 #include "Outils.h"
+#include "Menu.h"
 
 #include "Information.h"
 #include "Keyboard.h"
@@ -70,7 +70,7 @@ void Commande ( char code, unsigned int valeur )
 	switch ( code )
 	{
 		case 'Q' :
-			_exit( 0 );
+			_exit( EXIT_SUCCESS );
 			break;
 		case 'P' :
 		{
